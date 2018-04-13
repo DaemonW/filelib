@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="download_num">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+
+    <string-array name="label_thumb_icon">
+        <item>@drawable/tag_thumb_gray</item>
+        <item>@drawable/tag_thumb_red</item>
+        <item>@drawable/tag_thumb_orange</item>
+        <item>@drawable/tag_thumb_yellow</item>
+        <item>@drawable/tag_thumb_green</item>
+        <item>@drawable/tag_thumb_blue</item>
+        <item>@drawable/tag_thumb_violet</item>
+    </string-array>
+
+    <string-array name="label_icon">
+        <item>@drawable/ic_tag_gray</item>
+        <item>@drawable/ic_tag_red</item>
+        <item>@drawable/ic_tag_orange</item>
+        <item>@drawable/ic_tag_yellow</item>
+        <item>@drawable/ic_tag_green</item>
+        <item>@drawable/ic_tag_blue</item>
+        <item>@drawable/ic_tag_violet</item>
+    </string-array>
+
+    <string-array name="encodings">
+        <item>UTF-8</item>
+        <item>ISO8859-1</item>
+        <item>CP1251</item>
+        <item>GBK</item>
+        <item>BIG5</item>
+        <item>GB2312</item>
+    </string-array>
+
+    <string-array name="open_file_type">
+        <item>image/*</item>
+        <item>audio/*</item>
+        <item>video/*</item>
+        <item>text/plain</item>
+        <item>*/*</item>
+    </string-array>
+
+
+    <string-array name="skin_icon">
+        <item>@drawable/ic_day_theme</item>
+        <item>@drawable/ic_night_theme</item>
+    </string-array>
+
+
+    <array name="webdav_protocol">
+        <item>http</item>
+        <item>https</item>
+    </array>
+
+    <string-array name="flash_icons">
+        <item>drawable/ic_flash_off</item>
+        <item>drawable/ic_flash_auto</item>
+        <item>drawable/ic_flash_on</item>
+        <item>drawable/ic_flash_torch</item>
+    </string-array>
+    <string-array name="flash_entries">
+        <item>Flash Off</item>
+        <item>Flash Auto</item>
+        <item>Flash On</item>
+        <item>Torch</item>
+    </string-array>
+    <string-array name="flash_values">
+        <item>flash_off</item>
+        <item>flash_auto</item>
+        <item>flash_on</item>
+        <item>flash_torch</item>
+    </string-array>
+    <string-array name="focus_mode_icons">
+        <item>drawable/ic_focus_mode_auto</item>
+        <item>drawable/ic_focus_mode_infinity</item>
+        <item>drawable/ic_focus_mode_macro</item>
+        <item>drawable/ic_focus_mode_fixed</item>
+        <item>drawable/ic_focus_mode_edof</item>
+        <item>drawable/ic_focus_mode_continuous_video</item>
+    </string-array>
+    <string-array name="focus_mode_values">
+        <item>focus_mode_auto</item>
+        <item>focus_mode_infinity</item>
+        <item>focus_mode_macro</item>
+        <item>focus_mode_fixed</item>
+        <item>focus_mode_edof</item>
+        <item>focus_mode_continuous_video</item>
+    </string-array>
+
+</resources>

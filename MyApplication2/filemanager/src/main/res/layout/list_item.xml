@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/itemView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/fifty_six_dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF">
+
+        <RelativeLayout
+            android:id="@+id/thumbLayout"
+            android:layout_width="@dimen/seventy_two_dp"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/fifty_six_dp">
+
+            <com.grt.filemanager.view.CircleLayout
+                android:id="@+id/thumb_circle_layout"
+                android:layout_width="@dimen/forty_dp"
+                android:layout_height="@dimen/forty_dp"
+                android:layout_marginLeft="@dimen/sixteen_dp"
+                android:layout_marginStart="@dimen/sixteen_dp"
+                android:layout_marginTop="@dimen/eight_dp" />
+
+            <ImageView
+                android:id="@+id/item_thumb"
+                android:layout_width="@dimen/forty_dp"
+                android:layout_height="@dimen/forty_dp"
+                android:layout_centerInParent="true"
+                android:minHeight="@dimen/forty_dp" />
+
+            <ImageView
+                android:id="@+id/app_icon"
+                android:layout_width="@dimen/sixteen_dp"
+                android:layout_height="@dimen/sixteen_dp"
+                android:layout_alignBottom="@+id/thumb_circle_layout"
+                android:layout_alignEnd="@+id/thumb_circle_layout"
+                android:layout_alignRight="@+id/thumb_circle_layout"
+                android:visibility="gone" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/sixteen_dp"
+            android:layout_marginRight="@dimen/sixteen_dp"
+            android:layout_toRightOf="@+id/thumbLayout"
+            android:minHeight="@dimen/fifty_six_dp">
+
+            <TextView
+                android:id="@+id/fileName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/eight_dp"
+                android:layout_marginRight="14dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="#000000"
+                android:textSize="@dimen/fourteen_sp" />
+
+            <TextView
+                android:id="@+id/fileInfo1"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/sixteen_dp"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/fileName"
+                android:layout_marginTop="@dimen/four_dp"
+                android:ellipsize="start"
+                android:singleLine="true"
+                android:textColor="#000000"
+                android:textSize="@dimen/ten_sp" />
+
+            <TextView
+                android:id="@+id/fileInfo2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/fileName"
+                android:layout_marginTop="@dimen/four_dp"
+                android:layout_toEndOf="@+id/fileInfo1"
+                android:layout_toRightOf="@+id/fileInfo1"
+                android:textColor="#000000"
+                android:textSize="@dimen/ten_sp" />
+
+            <TextView
+                android:id="@+id/lastModified"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/sixteen_dp"
+                android:layout_toRightOf="@+id/fileInfo2"
+                android:layout_toEndOf="@+id/fileInfo2"
+                android:layout_below="@+id/fileName"
+                android:layout_marginTop="@dimen/four_dp"
+                android:ellipsize="end"
+                android:textColor="#000000"
+                android:textSize="@dimen/ten_sp" />
+
+            <TextView
+                android:id="@+id/fileInfo3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_below="@+id/fileInfo2"
+                android:layout_marginBottom="@dimen/eight_dp"
+                android:layout_marginEnd="@dimen/eight_dp"
+                android:layout_marginRight="@dimen/eight_dp"
+                android:layout_marginTop="@dimen/four_dp"
+                android:textColor="#000000"
+                android:textSize="@dimen/nine_sp" />
+
+            <TextView
+                android:id="@+id/fileInfo4"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/twelve_dp"
+                android:layout_below="@+id/fileInfo2"
+                android:layout_marginBottom="@dimen/eight_dp"
+                android:layout_marginTop="@dimen/four_dp"
+                android:layout_toEndOf="@+id/fileInfo3"
+                android:layout_toRightOf="@+id/fileInfo3"
+                android:gravity="top"
+                android:maxLines="2"
+                android:textColor="#000000"
+                android:textSize="@dimen/nine_sp" />
+        </RelativeLayout>
+
+        <ImageView
+            android:id="@+id/label_icon"
+            android:layout_width="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginEnd="@dimen/sixteen_dp"
+            android:layout_marginRight="@dimen/sixteen_dp"
+            android:layout_marginTop="@dimen/twelve_dp"
+            android:layout_height="wrap_content" />
+
+        <View
+            android:id="@+id/dividingLine"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_alignParentBottom="true"
+            android:layout_toEndOf="@+id/thumbLayout"
+            android:layout_toRightOf="@+id/thumbLayout"
+            android:background="#8c8b8b" />
+    </RelativeLayout>
+</RelativeLayout>

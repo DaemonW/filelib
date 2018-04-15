@@ -22,24 +22,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <receiver android:name=".MainActivity$MediaReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MEDIA_MOUNTED"/>
-                <action android:name="android.intent.action.MEDIA_REMOVED"/>
-                <data android:scheme="file"></data>
-            </intent-filter>
-        </receiver>
-
-
-        <receiver android:name=".MainActivity$USBReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.ACTION_USB_DEVICE_ATTACHED"/>
-                <action android:name="android.intent.action.ACTION_USB_DEVICE_ATTACHED"/>
-                <data android:scheme="file"></data>
-            </intent-filter>
-        </receiver>
     </application>
 
 </manifest>

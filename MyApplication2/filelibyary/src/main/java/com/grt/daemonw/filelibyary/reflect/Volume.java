@@ -1,57 +1,101 @@
 package com.grt.daemonw.filelibyary.reflect;
 
-import android.os.Environment;
+import android.content.Context;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
+import android.util.Log;
 
+import com.grt.daemonw.filelibyary.file.HybirdFile;
 import com.grt.daemonw.filelibyary.utils.BuildUtils;
 
 import java.io.File;
+import java.lang.reflect.Method;
 
 public class Volume {
+    public static final String LOG_TAG = Volume.class.getSimpleName();
 
-    private Object volume;
+    private Object storageVolume;
+    public int mStorageId;
     public String mPath;
     public int mountType;
-    public String mState;
+    private String mState;
     public String mDescription;
 
-    public Volume(Object volume) {
-        this.volume = volume;
+    public static final int MOUNT_INTERNAL = 0;
+    public static final int MOUNT_EXTERNAL = 1;
+    public static final int MOUNT_USB = 2;
+
+    private Volume() {
+
+    }
+
+
+    public static Volume fromStorageVolume(Context context, StorageVolume volume) {
+        StorageManager storageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+        Volume v = mirrorObj(context, volume);
         if (BuildUtils.thanMarshmallow()) {
-            parseVolumeInfo(volume);
-        } else if (BuildUtils.thanLollipop()) {
-            parseStorageVolume(volume);
+            v.mountType = v.getVolumeTypeSinceMarshmallow(storageManager);
         } else {
-            throw new RuntimeException("current os version is not support");
+            v.mountType = v.getVolumeType(storageManager);
         }
+        return v;
     }
 
-
-    private void parseStorageVolume(Object obj) {
-        File file = (File) ReflectUtil.getField(obj, "mPath");
-        mPath = file.getAbsolutePath();
-        mState = (String) ReflectUtil.getField(obj, "mState");
-        mDescription = (String) ReflectUtil.getField(obj, "mDescription");
+    private static Volume mirrorObj(Context context, StorageVolume volume) {
+        Volume v = new Volume();
+        v.storageVolume = volume;
+        File file = (File) ReflectUtil.getPrivateField(volume, "mPath");
+        v.mPath = file.getAbsolutePath();
+        v.mStorageId = (int) ReflectUtil.getPrivateField(volume, "mStorageId");
+        v.mState = (String) ReflectUtil.getPrivateField(volume, "mState");
+        Method method = ReflectUtil.getPublicMethod(volume, "getDescription", Context.class);
+        v.mDescription = (String) ReflectUtil.invokeMethod(method, volume, context);
+        return v;
     }
 
-    private void parseVolumeInfo(Object obj) {
-        mPath = (String) ReflectUtil.getField(obj, "path");
-        int state = (int) ReflectUtil.getField(obj, "state");
-        switch (state) {
-            case 0:
-                mState = Environment.MEDIA_UNMOUNTED;
-                break;
-            case 1:
-                mState = Environment.MEDIA_CHECKING;
-                break;
-            case 2:
-                mState = Environment.MEDIA_MOUNTED;
-                break;
-            case 7:
-                mState = Environment.MEDIA_REMOVED;
-            default:
-                mState = Environment.MEDIA_UNMOUNTED;
-                break;
+    private int getVolumeType(StorageManager storageManager) {
+        int type = Volume.MOUNT_INTERNAL;
+        return type;
+    }
+
+    private int getVolumeTypeSinceMarshmallow(StorageManager storageManager) {
+        String volumeId = (String) ReflectUtil.getPrivateField(storageVolume, "mId");
+        int type = Volume.MOUNT_INTERNAL;
+        Method volumeMethod = ReflectUtil.getPublicMethod(storageManager, "findVolumeById", String.class);
+        if (volumeMethod == null) {
+            Log.e(LOG_TAG, "can't find method findVolumeById in class StorageManager");
+            return type;
         }
-        mDescription = (String) ReflectUtil.call(obj, "getDescription", true, false);
+        Object volumeInfo = ReflectUtil.invokeMethod(volumeMethod, storageManager, volumeId);
+        Object diskInfo = ReflectUtil.getPublicField(volumeInfo, "disk");
+        if (diskInfo == null) {
+            Log.e(LOG_TAG, "can't find filed \'disk\' in class VolumeInfo");
+            return type;
+        }
+
+        Method isSdMethod = ReflectUtil.getPublicMethod(diskInfo, "isSd");
+        boolean isSd = (boolean) ReflectUtil.invokeMethod(isSdMethod, diskInfo);
+        if (isSd) {
+            return Volume.MOUNT_EXTERNAL;
+        }
+        Method isUsbMethod = ReflectUtil.getPublicMethod(diskInfo, "isUsb");
+        boolean isUsb = (boolean) ReflectUtil.invokeMethod(isUsbMethod, diskInfo);
+        if (isUsb) {
+            return Volume.MOUNT_USB;
+        }
+        return type;
+    }
+
+    public String getState() {
+        return (String) ReflectUtil.getPrivateField(storageVolume, "mState");
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("mStorageId = ").append(mStorageId).append('\n')
+                .append("mPath = ").append(mPath).append('\n')
+                .append("mState = ").append(mState).append('\n')
+                .append("mDescription = ").append(mDescription).append('\n');
+        return sb.toString();
     }
 }

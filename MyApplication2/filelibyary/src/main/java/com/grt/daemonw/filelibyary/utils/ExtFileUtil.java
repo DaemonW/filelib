@@ -1,16 +1,22 @@
 package com.grt.daemonw.filelibyary.utils;
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.UriPermission;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v4.provider.DocumentFile;
+
+import com.grt.daemonw.filelibyary.Constant;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 public class ExtFileUtil {
-
     public FileItem fromDocumentFile(DocumentFile file) {
         FileItem item = new FileItem();
         item.file = file;
@@ -29,6 +35,15 @@ public class ExtFileUtil {
         String[] parts = path.split("/");
         for (int i = 3; i < parts.length; i++) {
             document = document.findFile(parts[i]);
+        }
+        return document;
+    }
+
+    public static DocumentFile getDocumentFilePath(Context context, String path,String sdCardUri) {
+        DocumentFile document = DocumentFile.fromTreeUri(context, Uri.parse(sdCardUri));
+        String[] parts = path.split("/");
+        for (int i = 3; i < parts.length; i++) {
+            document= document.findFile(parts[i]);
         }
         return document;
     }

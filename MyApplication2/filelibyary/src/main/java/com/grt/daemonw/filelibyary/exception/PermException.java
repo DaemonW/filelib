@@ -1,6 +1,6 @@
 package com.grt.daemonw.filelibyary.exception;
 
-public class PermException extends Error {
+public class PermException extends Exception {
     public int permCode;
 
     public static final int PERM_EXT = 0;

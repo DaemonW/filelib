@@ -2,12 +2,9 @@ package com.grt.daemonw.filelibyary.file;
 
 import android.content.Context;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.support.v4.provider.DocumentFile;
 
 import com.grt.daemonw.filelibyary.MimeTypes;
-import com.grt.daemonw.filelibyary.exception.PermException;
-import com.grt.daemonw.filelibyary.utils.ExtFileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,63 +12,58 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public class ExtFile extends HybirdFile {
-    public static final String PREF_DEFAULT_EXT_URI = "EXT_STORAGE_URI";
+public class ExtFile extends Filer {
 
-    private File mFile;
     private DocumentFile mDocFile;
-    private Uri mRootUri;
     private Context mContext;
 
-    private ExtFile(String filePath, Context context) {
+    public ExtFile(Context context, String filePath) {
         super(filePath);
-        mFile = new File(filePath);
-        mType=HybirdFile.TYPE_FILE;
+        mType = Filer.TYPE_EXT;
         mContext = context;
-        String strUri = PreferenceManager.getDefaultSharedPreferences(mContext).getString(PREF_DEFAULT_EXT_URI, null);
-        if (strUri == null) {
-            throw new PermException(PermException.PERM_EXT);
-        }
-        mRootUri = Uri.parse(strUri);
-        mDocFile = ExtFileUtil.getDocumentFile(mContext, mPath, mRootUri);
+        mDocFile = DocumentFile.fromTreeUri(context, Uri.parse(filePath));
     }
 
-    private ExtFile(DocumentFile file, Context context) {
-        super(file.getUri().getPath());
-        mFile = new File(mPath);
-        mType=HybirdFile.TYPE_FILE;
+    private ExtFile(Context context, DocumentFile file) {
+        super(file.getUri().toString());
+        mType = Filer.TYPE_EXT;
         mContext = context;
-        String strUri = PreferenceManager.getDefaultSharedPreferences(mContext).getString(PREF_DEFAULT_EXT_URI, null);
-        if (strUri == null) {
-            throw new PermException(PermException.PERM_EXT);
-        }
-        mRootUri = Uri.parse(strUri);
-        mDocFile = ExtFileUtil.getDocumentFile(mContext, mPath, mRootUri);
+        mDocFile = file;
     }
 
     @Override
     public boolean delete() {
-        return mFile.delete();
+        return mDocFile.delete();
     }
 
     @Override
-    public boolean createNewFile() throws IOException {
-        try {
-            return mDocFile.createFile(MimeTypes.getMimeType(mFile), mFile.getName()) != null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+    public ExtFile createNewFile(String fileName) throws IOException {
+        if (!isDirectory()) {
+            return null;
         }
+        try {
+            String name = new File(fileName).getName();
+            DocumentFile newFile = mDocFile.createFile(MimeTypes.getMimeType(name), name);
+            if (newFile != null) {
+                return new ExtFile(mContext, newFile);
+            }
+        } catch (Exception e) {
+            throw new IOException(e.getMessage());
+        }
+        return null;
     }
 
     @Override
-    public boolean mkDir() {
+    public ExtFile mkDir(String folderName) throws IOException {
         try {
-            File f = new File(mPath);
-            return mDocFile.createDirectory(f.getName()) != null;
+            File f = new File(folderName);
+            DocumentFile dir = mDocFile.createDirectory(f.getName());
+            if (dir == null) {
+                return null;
+            }
+            return new ExtFile(mContext, dir);
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new IOException(e.getMessage());
         }
     }
 
@@ -86,13 +78,13 @@ public class ExtFile extends HybirdFile {
     }
 
     @Override
-    public HybirdFile getParentFile() {
-        return new ExtFile(mDocFile.getParentFile(), mContext);
+    public Filer getParentFile() {
+        return new ExtFile(mContext, mDocFile.getParentFile());
     }
 
     @Override
     public String getPath() {
-        return mFile.getPath();
+        return mPath;
     }
 
     @Override
@@ -107,19 +99,24 @@ public class ExtFile extends HybirdFile {
 
     @Override
     public int getFileType() {
-        return HybirdFile.TYPE_EXT;
+        return Filer.TYPE_EXT;
     }
 
     @Override
-    public ArrayList<? extends HybirdFile> listFiles() {
-        ArrayList<ExtFile> files = new ArrayList<>();
+    public ArrayList<Filer> listFiles() {
+        ArrayList<Filer> files = new ArrayList<>();
         DocumentFile[] subFiles = mDocFile.listFiles();
         if (subFiles == null) {
             return files;
         }
         for (DocumentFile f : subFiles) {
-            files.add(new ExtFile(f, mContext));
+            files.add(new ExtFile(mContext, f));
         }
         return files;
+    }
+
+    @Override
+    public boolean isDirectory() {
+        return mDocFile.isDirectory();
     }
 }

@@ -1,7 +1,9 @@
 package com.grt.daemonw.myapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -10,15 +12,18 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.grt.daemonw.filelibyary.Constant;
+import com.grt.daemonw.filelibyary.file.ExtFile;
+import com.grt.daemonw.filelibyary.file.Filer;
 import com.grt.daemonw.filelibyary.utils.StorageUtil;
-import com.grt.daemonw.filelibyary.reflect.Volume;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -124,12 +129,15 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void init() {
-        List<Volume> volumeList = StorageUtil.getVolumes(this);
-        if (volumeList == null || volumeList.size() == 0) {
-            return;
+        String uri = PreferenceManager.getDefaultSharedPreferences(this).getString(Constant.PREF_EXT_URI, null);
+        Log.e("wangpeng", "uri = " + uri);
+        if (!StorageUtil.hasExtSdcardPermission(this)) {
+            StorageUtil.requestPermission(this);
         }
-        for (Volume v : volumeList) {
-            printfMsg("path = %s\n", v.mPath);
+        ExtFile file = new ExtFile(this, uri);
+        ArrayList<Filer> subs = file.listFiles();
+        for (Filer f : subs) {
+            Log.e("wangpeng", "uri = " + f.getFilePath());
         }
     }
 
@@ -145,5 +153,9 @@ public class MainActivity extends AppCompatActivity
             String msg = String.format(format, values);
             mConsole.append(msg);
         });
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+        StorageUtil.handlePermissionRequest(this, requestCode, resultCode, resultData);
     }
 }

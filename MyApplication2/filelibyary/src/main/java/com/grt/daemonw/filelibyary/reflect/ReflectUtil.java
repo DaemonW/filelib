@@ -5,7 +5,18 @@ import java.lang.reflect.Method;
 
 public class ReflectUtil {
 
-    public static Object getField(Object obj, String fieldName) {
+    public static Object getPublicField(Object obj, String fieldName) {
+        Object fieldVal = null;
+        try {
+            Field field = obj.getClass().getField(fieldName);
+            fieldVal = field.get(obj);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return fieldVal;
+    }
+
+    public static Object getPrivateField(Object obj, String fieldName) {
         Object fieldVal = null;
         try {
             Field field = obj.getClass().getDeclaredField(fieldName);
@@ -18,7 +29,18 @@ public class ReflectUtil {
     }
 
 
-    public static Object getStaticField(Object obj, String fieldName) {
+    public static Object getPublicStaticField(Object obj, String fieldName) {
+        Object fieldVal = null;
+        try {
+            Field field = obj.getClass().getField(fieldName);
+            fieldVal = field.get(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return fieldVal;
+    }
+
+    public static Object getPrivateStaticField(Object obj, String fieldName) {
         Object fieldVal = null;
         try {
             Field field = obj.getClass().getDeclaredField(fieldName);
@@ -31,26 +53,42 @@ public class ReflectUtil {
     }
 
 
-    public static Method getMethod(Class<?> clazz, String methodName, boolean isPublic) {
+    public static Method getPublicMethod(Class<?> clazz, String methodName, Class<?>... params) {
         Method method = null;
         try {
-            method = isPublic ? clazz.getMethod(methodName) : clazz.getDeclaredMethod(methodName);
-            if (!isPublic) {
-                method.setAccessible(true);
-            }
+            method = clazz.getMethod(methodName);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return method;
     }
 
-    public static Method getMethod(Object obj, String methodName, boolean isPublic) {
+    public static Method getPublicMethod(Object obj, String methodName, Class<?>... params) {
         Method method = null;
         try {
-            method = isPublic ? obj.getClass().getMethod(methodName) : obj.getClass().getDeclaredMethod(methodName);
-            if (!isPublic) {
-                method.setAccessible(true);
-            }
+            method = obj.getClass().getMethod(methodName, params);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return method;
+    }
+
+    public static Method getPrivateMethod(Class<?> clazz, String methodName, Class<?>... params) {
+        Method method = null;
+        try {
+            method = clazz.getMethod(methodName);
+            method.setAccessible(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return method;
+    }
+
+    public static Method getPrivateMethod(Object obj, String methodName, Class<?>... params) {
+        Method method = null;
+        try {
+            method = obj.getClass().getMethod(methodName);
+            method.setAccessible(true);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -61,21 +99,6 @@ public class ReflectUtil {
         Object result = null;
         try {
             result = method.invoke(instance, args);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return result;
-    }
-
-
-    public static Object call(Object obj, String methodName, boolean isPublic, boolean isStatic, Object... args) {
-        Object result = null;
-        try {
-            Method method = isPublic ? obj.getClass().getMethod(methodName) : obj.getClass().getDeclaredMethod(methodName);
-            if (!isPublic) {
-                method.setAccessible(true);
-            }
-            result = isStatic ? method.invoke(null, args) : method.invoke(obj, args);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -1,45 +1,78 @@
 package com.grt.daemonw.filelibyary.file;
 
+import android.content.Context;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public abstract class HybirdFile {
-    public static final int TYPE_FILE = 0;
-    public static final int TYPE_USB = 1;
-    public static final int TYPE_EXT = 2;
+/**
+ * Created by daemonw on 4/13/18.
+ */
 
-    protected String mPath;
-    protected int mType;
+public class HybirdFile {
+    private Filer mFile;
 
-    public HybirdFile(String filePath) {
-        this.mPath = filePath;
+    public HybirdFile(Context context, String filePath, int type) {
+        switch (type) {
+            case Filer.TYPE_FILE:
+                mFile = new LocalFile(context, filePath);
+                break;
+            case Filer.TYPE_EXT:
+                mFile = new ExtFile(context, filePath);
+                break;
+            case Filer.TYPE_USB:
+                break;
+        }
     }
 
-    public  abstract boolean delete();
+    public HybirdFile(Filer filer){
+        this.mFile=filer;
+    }
 
-    public abstract boolean createNewFile() throws IOException;
 
-    public abstract boolean mkDir();
+    public boolean delete() {
+        return mFile.delete();
+    }
 
-    public abstract String getName();
+    public Filer createNewFile(String subFileName) throws IOException {
+        return mFile.createNewFile(subFileName);
+    }
 
-    public abstract String getParent();
+    public HybirdFile mkDir(String subFolder) throws IOException{
+        return new HybirdFile(mFile.mkDir(subFolder));
+    }
 
-    public abstract HybirdFile getParentFile();
+    public String getName() {
+        return mFile.getName();
+    }
 
-    public abstract String getPath();
+    public String getParent() {
+        return mFile.getParent();
+    }
 
-    public abstract OutputStream getOutStream() throws IOException;
+    public Filer getParentFile() {
+        return mFile.getParentFile();
+    }
 
-    public abstract InputStream getInputStream() throws IOException;
+    public String getPath() {
+        return mFile.getPath();
+    }
 
-    public abstract int getFileType();
+    public OutputStream getOutStream() throws IOException {
+        return mFile.getOutStream();
+    }
 
-    public abstract ArrayList<? extends HybirdFile> listFiles();
+    public InputStream getInputStream() throws IOException {
+        return mFile.getInputStream();
+    }
 
-    public String getFilePath(){
-        return mPath;
+    public int getFileType() {
+        return mFile.getFileType();
+    }
+
+    public ArrayList<? extends Filer> listFiles() {
+        return mFile.listFiles();
     }
 }

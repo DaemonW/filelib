@@ -3,32 +3,24 @@ package com.grt.daemonw.myapplication;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
+import android.widget.ListView;
 
-import com.grt.daemonw.filelibyary.Constant;
-import com.grt.daemonw.filelibyary.file.ExtFile;
-import com.grt.daemonw.filelibyary.file.Filer;
-import com.grt.daemonw.filelibyary.utils.StorageUtil;
+import com.grt.daemonw.filelibrary.reflect.Volume;
+import com.grt.daemonw.filelibrary.utils.StorageUtil;
 
-import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity {
 
-    private TextView mConsole;
+    private ListView mList;
     private Handler mHandler = new Handler();
 
     @Override
@@ -38,12 +30,11 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mConsole = findViewById(R.id.console);
+        mList = findViewById(R.id.list);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener((v) -> {
-            Snackbar.make(v, "Replace with your own action", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
+            StorageUtil.requestPermission(MainActivity.this);
         });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -51,9 +42,6 @@ public class MainActivity extends AppCompatActivity
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
         init();
     }
 
@@ -77,82 +65,10 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    private void showToastMsg(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
-    }
-
     private void init() {
-        String uri = PreferenceManager.getDefaultSharedPreferences(this).getString(Constant.PREF_EXT_URI, null);
-        Log.e("wangpeng", "uri = " + uri);
-        if (!StorageUtil.hasExtSdcardPermission(this)) {
-            StorageUtil.requestPermission(this);
-        }
-        ExtFile file = new ExtFile(this, uri);
-        ArrayList<Filer> subs = file.listFiles();
-        for (Filer f : subs) {
-            Log.e("wangpeng", "uri = " + f.getFilePath());
-        }
-    }
-
-    private void printlnMsg(String format, Object... values) {
-        mHandler.post(() -> {
-            String msg = String.format(format + "\n", values);
-            mConsole.append(msg);
-        });
-    }
-
-    private void printfMsg(String format, Object... values) {
-        mHandler.post(() -> {
-            String msg = String.format(format, values);
-            mConsole.append(msg);
-        });
+        List<Volume> volumeList = StorageUtil.getVolumes(this);
+        ListAdapter adapter = new ArrayAdapter<Volume>(this, android.R.layout.simple_list_item_1, volumeList);
+        mList.setAdapter(adapter);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {

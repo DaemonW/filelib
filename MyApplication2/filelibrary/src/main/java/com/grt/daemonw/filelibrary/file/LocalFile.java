@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public class LocalFile extends AbstractFile {
+public class LocalFile extends Filer {
     private File mFile;
     private Context mContext;
 
@@ -18,14 +18,14 @@ public class LocalFile extends AbstractFile {
         super(filePath);
         mFile = new File(filePath);
         mContext = context;
-        mType = AbstractFile.TYPE_INTERNAL;
+        mType = Filer.TYPE_INTERNAL;
     }
 
     public LocalFile(Context context, File file) {
         super(file.getAbsolutePath());
         mFile = file;
         mContext = context;
-        mType = AbstractFile.TYPE_INTERNAL;
+        mType = Filer.TYPE_INTERNAL;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class LocalFile extends AbstractFile {
     }
 
     @Override
-    public AbstractFile mkDir(String folderName) {
+    public Filer mkDir(String folderName) {
         File file = new File(folderName);
         File f = new File(mPath + "/" + file.getName());
         if (f.mkdir()) {
@@ -65,7 +65,7 @@ public class LocalFile extends AbstractFile {
     }
 
     @Override
-    public AbstractFile getParentFile() {
+    public Filer getParentFile() {
         File f = mFile.getParentFile();
         return new LocalFile(mContext, f.getAbsolutePath());
     }
@@ -86,8 +86,8 @@ public class LocalFile extends AbstractFile {
     }
 
     @Override
-    public ArrayList<AbstractFile> listFiles() {
-        ArrayList<AbstractFile> files = new ArrayList<>();
+    public ArrayList<Filer> listFiles() {
+        ArrayList<Filer> files = new ArrayList<>();
         File[] subFiles = mFile.listFiles();
         if (subFiles == null) {
             return files;
@@ -100,7 +100,7 @@ public class LocalFile extends AbstractFile {
 
     @Override
     public int getFileType() {
-        return AbstractFile.TYPE_INTERNAL;
+        return Filer.TYPE_INTERNAL;
     }
 
     @Override

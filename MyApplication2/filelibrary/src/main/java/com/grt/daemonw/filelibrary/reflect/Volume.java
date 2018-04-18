@@ -1,17 +1,18 @@
 package com.grt.daemonw.filelibrary.reflect;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.grt.daemonw.filelibrary.Constant;
-import com.grt.daemonw.filelibrary.file.AbstractFile;
 import com.grt.daemonw.filelibrary.utils.BuildUtils;
 import com.orhanobut.logger.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 
 public class Volume {
@@ -62,6 +63,7 @@ public class Volume {
         if (mIsPrimary && !mIsRemovable) {
             return MOUNT_INTERNAL;
         }
+
         //get type upon android 6.0
         StorageManager storageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
         if (BuildUtils.thanMarshmallow()) {
@@ -71,14 +73,6 @@ public class Volume {
             }
         }
         //get type under android 6.0
-        //judge by path
-        String extSdPath = PreferenceManager.getDefaultSharedPreferences(context).getString(Constant.PREF_EXTERNAL_PATH, null);
-        Logger.e("extSd card = "+extSdPath);
-        if (extSdPath != null) {
-            if (mPath.contains(extSdPath)) {
-                return MOUNT_EXTERNAL;
-            }
-        }
         //judge by label
         String label = mDescription.toUpperCase();
         if (label.contains("USB") || label.contains("OTG")) {
@@ -95,17 +89,29 @@ public class Volume {
         if (path.contains("SD") || path.contains("CARD")) {
             return MOUNT_EXTERNAL;
         }
+
         //juage by secondary_storage property
         String secondaryStorage = System.getenv("SECONDARY_STORAGE");
-        Logger.e("secondary path = "+secondaryStorage);
+        Logger.e("secondary path = " + secondaryStorage);
         if (secondaryStorage != null) {
-            if (secondaryStorage.equals(extSdPath)) {
+            if (secondaryStorage.equals(mPath)) {
                 return MOUNT_EXTERNAL;
             }
             if (secondaryStorage.toUpperCase().contains("SD") || secondaryStorage.toUpperCase().contains("CARD")) {
                 return MOUNT_EXTERNAL;
             }
         }
+
+        //judge by path
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        String extSdPath = sp.getString(Constant.PREF_EXTERNAL_PATH, null);
+        Logger.e("extSd card = " + extSdPath);
+        if (extSdPath != null) {
+            if (mPath.contains(extSdPath)) {
+                return MOUNT_EXTERNAL;
+            }
+        }
+
         return MOUNT_USB;
     }
 

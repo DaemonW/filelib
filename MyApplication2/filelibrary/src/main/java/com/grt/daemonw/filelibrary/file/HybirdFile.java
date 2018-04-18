@@ -1,13 +1,18 @@
 package com.grt.daemonw.filelibrary.file;
 
 import android.content.Context;
+import android.net.Uri;
+import android.support.v4.provider.DocumentFile;
 
+import com.grt.daemonw.filelibrary.MimeTypes;
 import com.grt.daemonw.filelibrary.reflect.Volume;
 import com.grt.daemonw.filelibrary.utils.StorageUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,70 +20,32 @@ import java.util.List;
  * Created by daemonw on 4/13/18.
  */
 
-public class HybirdFile {
+public class HybirdFile extends Filer {
     public static final String TAG_EXTERNAL_STORAGE = "content://com.android.externalstorage.documents/tree/";
-    public static final String TAG_TREE = "tree/";
-    public static final String TAG_DOC = "document/";
+    public static final String TAG_TREE = "/tree/";
+    public static final String TAG_DOC = "/document/";
 
-    private AbstractFile mFile;
+    private DocumentFile mFile;
+    private Context mContext;
+    private int mountType = Volume.MOUNT_UNKNOWN;
 
-    public HybirdFile(Context context, String filePath, int type) {
-        switch (type) {
-            case AbstractFile.TYPE_INTERNAL:
-                mFile = new LocalFile(context, filePath);
-                break;
-            case AbstractFile.TYPE_EXTERNAL:
-                mFile = new DocFile(context, filePath, type);
-                break;
-            case AbstractFile.TYPE_USB:
-                mFile = new DocFile(context, filePath, type);
-                break;
-        }
-    }
 
     public HybirdFile(Context context, String filePath) {
-        int type = AbstractFile.TYPE_INTERNAL;
+        super(filePath);
+        mContext = context;
         if (filePath.startsWith(TAG_EXTERNAL_STORAGE)) {
-            int index = filePath.indexOf(TAG_DOC);
-            String storageName;
-            if(index==-1){
-                storageName=filePath.substring(TAG_EXTERNAL_STORAGE.length());
-            }else{
-                storageName = filePath.substring(TAG_EXTERNAL_STORAGE.length(), index);
-            }
-            List<Volume> volumes = StorageUtil.getVolumes(context);
-            for (Volume v : volumes) {
-                if (v.mPath.contains(storageName)) {
-                    type = v.mountType;
-                    break;
-                }
-                String label = v.mDescription.toLowerCase();
-                if (label.contains("usb") || label.contains("otg")) {
-                    type = AbstractFile.TYPE_USB;
-                    break;
-                }
-
-                if (label.contains("sd") || label.contains("ext")) {
-                    type = AbstractFile.TYPE_EXTERNAL;
-                    break;
-                }
-            }
+            mFile = DocumentFile.fromTreeUri(context, Uri.parse(filePath));
+        } else {
+            mFile = DocumentFile.fromFile(new File(filePath));
         }
-        switch (type) {
-            case AbstractFile.TYPE_INTERNAL:
-                mFile = new LocalFile(context, filePath);
-                break;
-            case AbstractFile.TYPE_EXTERNAL:
-                mFile = new DocFile(context, filePath, type);
-                break;
-            case AbstractFile.TYPE_USB:
-                mFile = new DocFile(context, filePath, type);
-                break;
-        }
+        mountType = Volume.MOUNT_UNKNOWN;
     }
 
-    public HybirdFile(AbstractFile abstractFile) {
-        this.mFile = abstractFile;
+    public HybirdFile(Context context, DocumentFile file) {
+        super(file.getUri().toString());
+        mContext = context;
+        this.mFile = file;
+        mountType = Volume.MOUNT_UNKNOWN;
     }
 
 
@@ -86,12 +53,34 @@ public class HybirdFile {
         return mFile.delete();
     }
 
-    public AbstractFile createNewFile(String subFileName) throws IOException {
-        return mFile.createNewFile(subFileName);
+    @Override
+    public HybirdFile createNewFile(String fileName) throws IOException {
+        if (!isDirectory()) {
+            return null;
+        }
+        try {
+            String name = new File(fileName).getName();
+            DocumentFile newFile = mFile.createFile(MimeTypes.getMimeType(name), name);
+            if (newFile != null) {
+                return new HybirdFile(mContext, newFile);
+            }
+        } catch (Exception e) {
+            throw new IOException(e.getMessage());
+        }
+        return null;
     }
 
     public HybirdFile mkDir(String subFolder) throws IOException {
-        return new HybirdFile(mFile.mkDir(subFolder));
+        try {
+            File f = new File(subFolder);
+            DocumentFile newDir = mFile.createDirectory(f.getName());
+            if (newDir == null) {
+                return null;
+            }
+            return new HybirdFile(mContext, newDir);
+        } catch (Exception e) {
+            throw new IOException(e.getMessage());
+        }
     }
 
     public String getName() {
@@ -99,30 +88,70 @@ public class HybirdFile {
     }
 
     public String getParent() {
-        return mFile.getParent();
+        return mFile.getParentFile().getUri().getPath();
     }
 
-    public AbstractFile getParentFile() {
-        return mFile.getParentFile();
+    public HybirdFile getParentFile() {
+        return new HybirdFile(mContext, mFile.getParentFile());
     }
 
     public String getPath() {
-        return mFile.getPath();
+        return mPath;
     }
 
+    @Override
     public OutputStream getOutStream() throws IOException {
-        return mFile.getOutStream();
+        return mContext.getContentResolver().openOutputStream(mFile.getUri());
     }
 
+    @Override
     public InputStream getInputStream() throws IOException {
-        return mFile.getInputStream();
+        return mContext.getContentResolver().openInputStream(mFile.getUri());
     }
 
     public int getFileType() {
-        return mFile.getFileType();
+        if (mountType == Volume.MOUNT_UNKNOWN) {
+            mountType = getMountVolume();
+        }
+        return mountType;
     }
 
-    public ArrayList<AbstractFile> listFiles() {
-        return mFile.listFiles();
+    public int getMountVolume() {
+        String volumeName = null;
+        if (mPath.startsWith(TAG_EXTERNAL_STORAGE)) {
+            int index = mPath.indexOf(TAG_DOC);
+            if (index == -1) {
+                volumeName = mPath.substring(TAG_EXTERNAL_STORAGE.length() + 1);
+            } else {
+                volumeName = mPath.substring(TAG_EXTERNAL_STORAGE.length(), index);
+            }
+            volumeName = new File(URLDecoder.decode(volumeName)).getName();
+        }
+
+        List<Volume> volumes = StorageUtil.getVolumes(mContext);
+        for (Volume v : volumes) {
+            if (v.mPath.contains(volumeName)) {
+                return v.mountType;
+            }
+        }
+
+        return Volume.MOUNT_INTERNAL;
+    }
+
+    public ArrayList<Filer> listFiles() {
+        ArrayList<Filer> files = new ArrayList<>();
+        DocumentFile[] subFiles = mFile.listFiles();
+        if (subFiles == null) {
+            return files;
+        }
+        for (DocumentFile f : subFiles) {
+            files.add(new HybirdFile(mContext, f));
+        }
+        return files;
+    }
+
+    @Override
+    public boolean isDirectory() {
+        return mFile.isDirectory();
     }
 }

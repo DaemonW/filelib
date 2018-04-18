@@ -1,1 +1,1 @@
-include ':app', ':filelibrary',":filemanager"
+include ':app', ':filelibrary'

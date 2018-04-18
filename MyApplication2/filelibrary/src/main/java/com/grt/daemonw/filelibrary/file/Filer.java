@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public abstract class AbstractFile {
+public abstract class Filer {
     public static final int TYPE_INTERNAL = Volume.MOUNT_INTERNAL;
     public static final int TYPE_USB = Volume.MOUNT_EXTERNAL;
     public static final int TYPE_EXTERNAL = Volume.MOUNT_USB;
@@ -15,21 +15,21 @@ public abstract class AbstractFile {
     protected String mPath;
     protected int mType;
 
-    public AbstractFile(String filePath) {
+    public Filer(String filePath) {
         this.mPath = filePath;
     }
 
     public abstract boolean delete();
 
-    public abstract AbstractFile createNewFile(String fileName) throws IOException;
+    public abstract Filer createNewFile(String fileName) throws IOException;
 
-    public abstract AbstractFile mkDir(String folderName) throws IOException;
+    public abstract Filer mkDir(String folderName) throws IOException;
 
     public abstract String getName();
 
     public abstract String getParent();
 
-    public abstract AbstractFile getParentFile();
+    public abstract Filer getParentFile();
 
     public abstract String getPath();
 
@@ -41,7 +41,7 @@ public abstract class AbstractFile {
 
     public abstract boolean isDirectory();
 
-    public abstract ArrayList<AbstractFile> listFiles();
+    public abstract ArrayList<Filer> listFiles();
 
     public String getFilePath() {
         return mPath;

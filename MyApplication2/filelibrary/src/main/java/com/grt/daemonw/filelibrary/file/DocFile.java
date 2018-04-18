@@ -12,14 +12,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public class DocFile extends AbstractFile {
+public class DocFile extends Filer {
 
     private DocumentFile mDocFile;
     private Context mContext;
 
     public DocFile(Context context, String filePath) {
         super(filePath);
-        mType = AbstractFile.TYPE_EXTERNAL;
+        mType = Filer.TYPE_EXTERNAL;
         mContext = context;
         mDocFile = DocumentFile.fromTreeUri(context, Uri.parse(filePath));
     }
@@ -33,7 +33,7 @@ public class DocFile extends AbstractFile {
 
     private DocFile(Context context, DocumentFile file) {
         super(file.getUri().toString());
-        mType = AbstractFile.TYPE_EXTERNAL;
+        mType = Filer.TYPE_EXTERNAL;
         mContext = context;
         mDocFile = file;
     }
@@ -85,7 +85,7 @@ public class DocFile extends AbstractFile {
     }
 
     @Override
-    public AbstractFile getParentFile() {
+    public Filer getParentFile() {
         return new DocFile(mContext, mDocFile.getParentFile());
     }
 
@@ -110,8 +110,8 @@ public class DocFile extends AbstractFile {
     }
 
     @Override
-    public ArrayList<AbstractFile> listFiles() {
-        ArrayList<AbstractFile> files = new ArrayList<>();
+    public ArrayList<Filer> listFiles() {
+        ArrayList<Filer> files = new ArrayList<>();
         DocumentFile[] subFiles = mDocFile.listFiles();
         if (subFiles == null) {
             return files;

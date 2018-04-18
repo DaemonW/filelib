@@ -3,10 +3,12 @@ package com.grt.daemonw.filelibrary.receiver;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
 import com.grt.daemonw.filelibrary.Constant;
+import com.orhanobut.logger.Logger;
 
 /**
  * Created by daemonw on 4/14/18.
@@ -20,17 +22,26 @@ public class SdcardMountReceiver extends BroadcastReceiver {
         if (action == null) {
             return;
         }
-
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        boolean isUSBMounted = sp.getBoolean(Constant.PREF_USB_MOUNTED, false);
+        Uri rootUri = intent.getData();
         switch (action) {
             case Intent.ACTION_MEDIA_UNMOUNTED:
-                Intent intent1 = intent;
-                int a1 = 2;
-                break;
-            case Intent.ACTION_MEDIA_MOUNTED:
-                Uri rootUri = intent.getData();
                 if (rootUri != null) {
                     String path = rootUri.getLastPathSegment();
-                    PreferenceManager.getDefaultSharedPreferences(context).edit().putString(Constant.PREF_EXTERNAL_PATH, path).apply();
+                    if (isUSBMounted) {
+                        sp.edit().putString(Constant.PREF_EXTERNAL_PATH, path).apply();
+                    }
+                    Logger.d("Media Device Name = " + path);
+                }
+                break;
+            case Intent.ACTION_MEDIA_MOUNTED:
+                if (rootUri != null) {
+                    String path = rootUri.getLastPathSegment();
+                    if (!isUSBMounted) {
+                        sp.edit().putString(Constant.PREF_EXTERNAL_PATH, path).apply();
+                    }
+                    Logger.d("Media Device Name = " + path);
                 }
                 break;
             case Intent.ACTION_MEDIA_REMOVED:

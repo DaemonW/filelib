@@ -3,6 +3,7 @@ package com.grt.daemonw.filelibrary.utils;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.UriPermission;
 import android.net.Uri;
 import android.os.Environment;
@@ -23,7 +24,8 @@ import java.util.List;
 
 public class StorageUtil {
     private final static String LOG_TAG = StorageUtil.class.getSimpleName();
-    public static final int REQUEST_ASK_PERMISSION = 0;
+    public static final int REQUEST_SDCARD_PERMISSION = 0;
+    public static final int REQUEST_USB_PERMISSION = 1;
 
     public static List<Volume> getVolumes(Context context) {
         StorageManager storageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
@@ -71,17 +73,24 @@ public class StorageUtil {
     }
 
 
-    public static boolean hasExtSdcardPermission(Activity context) {
-        String extCardPath = PreferenceManager.getDefaultSharedPreferences(context).getString(Constant.PREF_EXTERNAL_URI, null);
-        if (extCardPath == null) {
+    public static boolean hasExtSdcardPermission(Activity context, int mountType) {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        String mediaPath = null;
+        if (mountType == Volume.MOUNT_EXTERNAL) {
+            mediaPath = sp.getString(Constant.PREF_EXTERNAL_URI, null);
+        } else {
+            mediaPath = sp.getString(Constant.PREF_USB_URI, null);
+        }
+
+        if (mediaPath == null) {
             return false;
         }
 
-        if (!isPersistedUri(context, extCardPath)) {
+        if (!isPersistedUri(context, mediaPath)) {
             return false;
         }
 
-        DocFile file = new DocFile(context, extCardPath);
+        DocFile file = new DocFile(context, mediaPath);
         try {
             DocFile subFile = file.createNewFile("test.txt");
             if (subFile == null) {
@@ -107,13 +116,14 @@ public class StorageUtil {
         return isPersisted;
     }
 
-    public static void requestPermission(Activity context) {
+    public static void requestPermission(Activity context, int mountType) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-        context.startActivityForResult(intent, REQUEST_ASK_PERMISSION);
+        int requestCode = mountType == Volume.MOUNT_EXTERNAL ? REQUEST_SDCARD_PERMISSION : REQUEST_USB_PERMISSION;
+        context.startActivityForResult(intent, requestCode);
     }
 
     public static void handlePermissionRequest(Activity context, int requestCode, int resultCode, Intent resultData) {
-        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_ASK_PERMISSION) {
+        if (resultCode == Activity.RESULT_OK) {
             Uri treeUri = resultData.getData();
             DocumentFile pickedDir = DocumentFile.fromTreeUri(context, treeUri);
             Log.d(LOG_TAG, "external_storage_uri = " + pickedDir.getUri().toString());
@@ -123,7 +133,12 @@ public class StorageUtil {
             context.getContentResolver().takePersistableUriPermission(treeUri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION |
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            PreferenceManager.getDefaultSharedPreferences(context).edit().putString(Constant.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+            if (requestCode == REQUEST_SDCARD_PERMISSION) {
+                sp.edit().putString(Constant.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+            } else if (requestCode == REQUEST_USB_PERMISSION) {
+                sp.edit().putString(Constant.PREF_USB_URI, treeUri.toString()).apply();
+            }
         }
     }
 }

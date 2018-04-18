@@ -26,7 +26,6 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.github.mjdev:libaums:0.5.5'
     implementation 'com.orhanobut:logger:2.2.0'
     implementation 'com.android.support:appcompat-v7:26.1.0'
     testImplementation 'junit:junit:4.12'

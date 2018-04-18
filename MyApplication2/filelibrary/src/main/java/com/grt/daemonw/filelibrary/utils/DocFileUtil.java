@@ -1,22 +1,15 @@
 package com.grt.daemonw.filelibrary.utils;
 
-import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.UriPermission;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.support.v4.provider.DocumentFile;
-
-import com.grt.daemonw.filelibrary.Constant;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 
-public class ExtFileUtil {
+public class DocFileUtil {
     public FileItem fromDocumentFile(DocumentFile file) {
         FileItem item = new FileItem();
         item.file = file;

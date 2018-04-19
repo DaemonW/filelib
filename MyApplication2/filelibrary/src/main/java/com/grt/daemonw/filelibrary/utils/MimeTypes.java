@@ -35,7 +35,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.grt.daemonw.filelibrary;
+package com.grt.daemonw.filelibrary.utils;
 
 import android.webkit.MimeTypeMap;
 

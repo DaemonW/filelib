@@ -8,7 +8,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
 import android.preference.PreferenceManager;
 
-import com.grt.daemonw.filelibrary.Constant;
+import com.grt.daemonw.filelibrary.FileConst;
 import com.orhanobut.logger.Logger;
 
 /**
@@ -35,8 +35,8 @@ public class UsbMountReceiver extends BroadcastReceiver {
             // determine if connected device is a mass storage device
             if (device != null) {
                 SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-                editor.putString(Constant.PREF_USB_DEVICE_NAME, device.getDeviceName());
-                editor.putBoolean(Constant.PREF_USB_MOUNTED, true);
+                editor.putString(FileConst.PREF_USB_DEVICE_NAME, device.getDeviceName());
+                editor.putBoolean(FileConst.PREF_USB_MOUNTED, true);
                 editor.apply();
                 Logger.d("USB Device Name = " + device.getProductName());
             }
@@ -47,8 +47,8 @@ public class UsbMountReceiver extends BroadcastReceiver {
             // determine if connected device is a mass storage device
             if (device != null) {
                 SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-                editor.putString(Constant.PREF_USB_DEVICE_NAME, null);
-                editor.putBoolean(Constant.PREF_USB_MOUNTED, false);
+                editor.putString(FileConst.PREF_USB_DEVICE_NAME, null);
+                editor.putBoolean(FileConst.PREF_USB_MOUNTED, false);
                 editor.apply();
             }
         }

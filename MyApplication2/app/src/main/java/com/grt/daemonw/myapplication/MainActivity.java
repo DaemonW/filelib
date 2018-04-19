@@ -2,24 +2,28 @@ package com.grt.daemonw.myapplication;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.provider.DocumentFile;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.grt.daemonw.filelibrary.Constant;
+import com.grt.daemonw.filelibrary.FileConst;
 import com.grt.daemonw.filelibrary.file.Filer;
 import com.grt.daemonw.filelibrary.file.HybirdFile;
 import com.grt.daemonw.filelibrary.reflect.Volume;
@@ -31,7 +35,8 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ListView mList;
+    private ListView mVolumeList;
+    private ListView mFileList;
     private Handler mHandler = new Handler();
     private static final int REQUEST_EXT_STORAGE_WRITE_PERM = 0;
 
@@ -42,7 +47,8 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mList = findViewById(R.id.list);
+        mVolumeList = findViewById(R.id.volume_list);
+        mFileList = findViewById(R.id.file_list);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener((v) -> {
@@ -79,30 +85,63 @@ public class MainActivity extends AppCompatActivity {
 
     private void init() {
         List<Volume> volumeList = StorageUtil.getVolumes(this);
-        Volume otg = null;
+        List<String> volumes = new ArrayList<>();
         for (Volume v : volumeList) {
-            if (v.mountType == Volume.MOUNT_USB) {
-                otg = v;
-                break;
-            }
+            volumes.add(v.mPath);
         }
-        ArrayList<String> subFiles = new ArrayList<>();
-        if (otg != null) {
-            if (!StorageUtil.hasExtSdcardPermission(this, Volume.MOUNT_USB)) {
-                StorageUtil.requestPermission(this, Volume.MOUNT_USB);
-                return;
+
+        BaseAdapter volumeAdapter = new BaseAdapter() {
+            @Override
+            public int getCount() {
+                return volumeList.size();
             }
-            String otg_uri = PreferenceManager.getDefaultSharedPreferences(this).getString(Constant.PREF_USB_URI, null);
-            Logger.d("otg uri =" + otg_uri);
-            HybirdFile file = new HybirdFile(this, otg_uri);
-            List<Filer> sub = file.listFiles();
-            Logger.d("sub file size =" + sub.size());
-            for (Filer f : sub) {
-                subFiles.add(f.getName());
+
+            @Override
+            public Object getItem(int position) {
+                return volumeList.get(position);
             }
-        }
-        ListAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, subFiles);
-        mList.setAdapter(adapter);
+
+            @Override
+            public long getItemId(int position) {
+                return position;
+            }
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View v = View.inflate(MainActivity.this, R.layout.list_item, null);
+                TextView tv=v.findViewById(R.id.text1);
+                tv.setText(volumeList.get(position).mDescription);
+                return v;
+            }
+        };
+        mVolumeList.setAdapter(volumeAdapter);
+        mVolumeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Volume v = volumeList.get(position);
+                String rootPath;
+                if (!StorageUtil.hasWritePermission(MainActivity.this, v.mountType)) {
+                    StorageUtil.requestPermission(MainActivity.this, v.mountType);
+                    return;
+                }
+                if (v.mountType == Volume.MOUNT_EXTERNAL) {
+                    rootPath = PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(FileConst.PREF_EXTERNAL_URI, null);
+                } else if (v.mountType == Volume.MOUNT_USB) {
+                    rootPath = PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(FileConst.PREF_USB_URI, null);
+                } else {
+                    rootPath = v.mPath;
+                }
+                HybirdFile file = new HybirdFile(MainActivity.this, rootPath);
+                List<Filer> sub = file.listFiles();
+                ArrayList<String> subFiles = new ArrayList<>();
+                for (Filer f : sub) {
+                    HybirdFile h = (HybirdFile) f;
+                    subFiles.add(h.getName());
+                }
+                ListAdapter adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, subFiles);
+                mFileList.setAdapter(adapter);
+            }
+        });
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {

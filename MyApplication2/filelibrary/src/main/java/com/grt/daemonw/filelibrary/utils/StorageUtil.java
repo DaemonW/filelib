@@ -13,8 +13,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
-import com.grt.daemonw.filelibrary.Constant;
-import com.grt.daemonw.filelibrary.file.DocFile;
+import com.grt.daemonw.filelibrary.FileConst;
 import com.grt.daemonw.filelibrary.reflect.Volume;
 
 import java.lang.reflect.Method;
@@ -73,13 +72,17 @@ public class StorageUtil {
     }
 
 
-    public static boolean hasExtSdcardPermission(Activity context, int mountType) {
+    public static boolean hasWritePermission(Activity context, int mountType) {
+        if (mountType == Volume.MOUNT_INTERNAL) {
+            return true;
+        }
+
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String mediaPath = null;
         if (mountType == Volume.MOUNT_EXTERNAL) {
-            mediaPath = sp.getString(Constant.PREF_EXTERNAL_URI, null);
-        } else {
-            mediaPath = sp.getString(Constant.PREF_USB_URI, null);
+            mediaPath = sp.getString(FileConst.PREF_EXTERNAL_URI, null);
+        } else if (mountType == Volume.MOUNT_USB) {
+            mediaPath = sp.getString(FileConst.PREF_USB_URI, null);
         }
 
         if (mediaPath == null) {
@@ -90,9 +93,12 @@ public class StorageUtil {
             return false;
         }
 
-        DocFile file = new DocFile(context, mediaPath);
+        DocumentFile file = DocumentFile.fromTreeUri(context, Uri.parse(mediaPath));
+        if (file.canWrite()) {
+            return true;
+        }
         try {
-            DocFile subFile = file.createNewFile("test.txt");
+            DocumentFile subFile = file.createFile(MimeTypes.getMimeType(FileConst.DUMB_FILE), FileConst.DUMB_FILE);
             if (subFile == null) {
                 return false;
             }
@@ -135,9 +141,9 @@ public class StorageUtil {
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
             if (requestCode == REQUEST_SDCARD_PERMISSION) {
-                sp.edit().putString(Constant.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
             } else if (requestCode == REQUEST_USB_PERMISSION) {
-                sp.edit().putString(Constant.PREF_USB_URI, treeUri.toString()).apply();
+                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
             }
         }
     }

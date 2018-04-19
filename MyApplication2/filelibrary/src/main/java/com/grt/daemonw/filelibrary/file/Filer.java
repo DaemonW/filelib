@@ -1,49 +1,39 @@
 package com.grt.daemonw.filelibrary.file;
 
-import com.grt.daemonw.filelibrary.reflect.Volume;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public abstract class Filer {
-    public static final int TYPE_INTERNAL = Volume.MOUNT_INTERNAL;
-    public static final int TYPE_USB = Volume.MOUNT_EXTERNAL;
-    public static final int TYPE_EXTERNAL = Volume.MOUNT_USB;
+public interface Filer {
+    public static final int TYPE_LOCAL = 0;
+    public static final int TYPE_FTP = 1;
 
-    protected String mPath;
-    protected int mType;
+    boolean delete();
 
-    public Filer(String filePath) {
-        this.mPath = filePath;
-    }
+    Filer createNewFile(String fileName) throws IOException;
 
-    public abstract boolean delete();
+    Filer mkDir(String folderName) throws IOException;
 
-    public abstract Filer createNewFile(String fileName) throws IOException;
+    String getName();
 
-    public abstract Filer mkDir(String folderName) throws IOException;
+    String getPath();
 
-    public abstract String getName();
+    String getUri();
 
-    public abstract String getParent();
+    Filer getParentFile();
 
-    public abstract Filer getParentFile();
+    String getParentPath();
 
-    public abstract String getPath();
+    String getParentUri();
 
-    public abstract OutputStream getOutStream() throws IOException;
+    OutputStream getOutStream() throws IOException;
 
-    public abstract InputStream getInputStream() throws IOException;
+    InputStream getInputStream() throws IOException;
 
-    public abstract int getFileType();
+    int getFileType();
 
-    public abstract boolean isDirectory();
+    boolean isDirectory();
 
-    public abstract ArrayList<Filer> listFiles();
-
-    public String getFilePath() {
-        return mPath;
-    }
+    ArrayList<Filer> listFiles();
 }

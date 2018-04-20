@@ -1,9 +1,9 @@
 package com.grt.daemonw.myapplication;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -16,19 +16,16 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.grt.daemonw.filelibrary.FileConst;
 import com.grt.daemonw.filelibrary.file.Filer;
-import com.grt.daemonw.filelibrary.file.HybirdFile;
+import com.grt.daemonw.filelibrary.file.LocalFile;
 import com.grt.daemonw.filelibrary.reflect.Volume;
 import com.grt.daemonw.filelibrary.utils.StorageUtil;
-import com.orhanobut.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 View v = View.inflate(MainActivity.this, R.layout.list_item, null);
-                TextView tv=v.findViewById(R.id.text1);
+                TextView tv = v.findViewById(R.id.text1);
                 tv.setText(volumeList.get(position).mDescription);
                 return v;
             }
@@ -131,17 +128,65 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     rootPath = v.mPath;
                 }
-                HybirdFile file = new HybirdFile(MainActivity.this, rootPath);
+                Toast.makeText(MainActivity.this, "volume path = " + rootPath, Toast.LENGTH_SHORT).show();
+                LocalFile file = new LocalFile(MainActivity.this, rootPath);
                 List<Filer> sub = file.listFiles();
                 ArrayList<String> subFiles = new ArrayList<>();
                 for (Filer f : sub) {
-                    HybirdFile h = (HybirdFile) f;
+                    LocalFile h = (LocalFile) f;
                     subFiles.add(h.getName());
                 }
-                ListAdapter adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, subFiles);
+                FileAdapter adapter = new FileAdapter(MainActivity.this, sub);
                 mFileList.setAdapter(adapter);
+                mFileList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        FileAdapter fileAdapter = (FileAdapter) parent.getAdapter();
+                        LocalFile localFile = (LocalFile) fileAdapter.getItem(position);
+                        ArrayList<Filer> fileList = localFile.listFiles();
+                        fileAdapter.mFiles = fileList;
+                        fileAdapter.notifyDataSetChanged();
+                    }
+                });
             }
         });
+    }
+
+    class FileAdapter extends BaseAdapter {
+        private Context mContext;
+        private List<Filer> mFiles;
+
+        public FileAdapter(Context context, List<Filer> files) {
+            super();
+            mContext = context;
+            mFiles = files;
+        }
+
+        @Override
+        public int getCount() {
+            if (mFiles == null) {
+                return 0;
+            }
+            return mFiles.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return mFiles.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View v = View.inflate(MainActivity.this, R.layout.list_item, null);
+            TextView tv = v.findViewById(R.id.text1);
+            tv.setText(mFiles.get(position).getName());
+            return v;
+        }
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {

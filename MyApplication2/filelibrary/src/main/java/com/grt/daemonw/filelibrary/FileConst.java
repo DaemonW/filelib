@@ -26,6 +26,6 @@ public class FileConst {
 
 
     //Permission
-    public static final int REQUEST_GRANT_EXTERNAL_PREMISSION = 0;
-    public static final int REQUEST_GRANT_USB_PREMISSION = 1;
+    public static final int REQUEST_GRANT_EXTERNAL_PERMISSION = 0;
+    public static final int REQUEST_GRANT_USB_PERMISSION = 1;
 }

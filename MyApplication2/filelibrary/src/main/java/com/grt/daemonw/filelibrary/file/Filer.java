@@ -6,8 +6,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 public interface Filer {
-    public static final int TYPE_LOCAL = 0;
-    public static final int TYPE_FTP = 1;
+    public static final int TYPE_RAW = 0;
+    public static final int TYPE_SAF = 1;
 
     boolean delete();
 
@@ -19,13 +19,9 @@ public interface Filer {
 
     String getPath();
 
-    String getUri();
-
     Filer getParentFile();
 
     String getParentPath();
-
-    String getParentUri();
 
     OutputStream getOutStream() throws IOException;
 

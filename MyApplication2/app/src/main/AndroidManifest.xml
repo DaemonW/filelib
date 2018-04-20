@@ -25,7 +25,7 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="com.grt.daemonw.filelibrary.receiver.SdcardMountReceiver">
+        <receiver android:name="com.daemonw.filelib.receiver.SdcardMountReceiver">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.MEDIA_MOUNTED" />
                 <action android:name="android.intent.action.MEDIA_UNMOUNTED" />
@@ -36,7 +36,7 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name="com.grt.daemonw.filelibrary.receiver.UsbMountReceiver">
+        <receiver android:name="com.daemonw.filelib.receiver.UsbMountReceiver">
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
                 <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-
-<!--此文件只可用于弹出框下面的三个按钮-->
-
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/btn_unable" android:state_enabled="false" />
-    <item android:color="@color/btn_enable" />
-</selector>

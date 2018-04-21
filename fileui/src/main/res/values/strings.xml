@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">fileui</string>
+    <string name="warn_grant_perm">You need choose the volume to grant permission</string>
+</resources>

@@ -33,7 +33,7 @@ public abstract class CommonAdapter<T> extends MultiItemTypeAdapter<T>
             }
 
             @Override
-            public boolean isForViewType( T item, int position)
+            public boolean isMatchedType( T item, int position)
             {
                 return true;
             }

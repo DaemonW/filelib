@@ -1,6 +1,5 @@
 package com.grt.daemonw.myapplication;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -24,12 +23,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.daemonw.filelib.FileConst;
-import com.daemonw.filelib.model.Filer;
-import com.daemonw.filelib.model.LocalFile;
 import com.daemonw.filelib.reflect.Volume;
 import com.daemonw.filelib.utils.PermissionUtil;
 import com.daemonw.filelib.utils.StorageUtil;
-import com.daemonw.fileui.core.FileAdapter;
+import com.daemonw.fileui.activity.FileActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +34,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private ListView mVolumeList;
-    private RecyclerView mFileList;
-    private Handler mHandler = new Handler();
     private static final int REQUEST_EXT_STORAGE_WRITE_PERM = 0;
 
     @Override
@@ -49,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         mVolumeList = findViewById(R.id.volume_list);
-        mFileList = findViewById(R.id.file_list);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener((v) -> {
@@ -79,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
+        }else{
             super.onBackPressed();
         }
     }
@@ -116,9 +110,6 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         mVolumeList.setAdapter(volumeAdapter);
-        mFileList.setLayoutManager(new LinearLayoutManager(this));
-        FileAdapter fileAdapter = new FileAdapter(MainActivity.this,R.layout.file_item, new ArrayList<Filer>());
-        mFileList.setAdapter(fileAdapter);
         mVolumeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -136,11 +127,11 @@ public class MainActivity extends AppCompatActivity {
                     rootPath = v.mPath;
                 }
                 Toast.makeText(MainActivity.this, "volume path = " + rootPath, Toast.LENGTH_SHORT).show();
-                LocalFile file = new LocalFile(MainActivity.this, rootPath);
-                List<Filer> sub = file.listFiles();
-                //FileAdapter fileAdapter = new FileAdapter(MainActivity.this,R.layout.file_item, sub);
-                fileAdapter.update(sub);
-                fileAdapter.notifyDataSetChanged();
+                Intent intent=new Intent(MainActivity.this, FileActivity.class);
+                Bundle bundle=new Bundle();
+                bundle.putString("root_path",rootPath);
+                intent.putExtras(bundle);
+                MainActivity.this.startActivity(intent);
             }
         });
     }

@@ -72,7 +72,7 @@ public class ItemViewDelegateManager<T>
         for (int i = delegatesCount - 1; i >= 0; i--)
         {
             ItemViewDelegate<T> delegate = delegates.valueAt(i);
-            if (delegate.isForViewType( item, position))
+            if (delegate.isMatchedType( item, position))
             {
                 return delegates.keyAt(i);
             }
@@ -88,7 +88,7 @@ public class ItemViewDelegateManager<T>
         {
             ItemViewDelegate<T> delegate = delegates.valueAt(i);
 
-            if (delegate.isForViewType( item, position))
+            if (delegate.isMatchedType( item, position))
             {
                 delegate.convert(holder, item, position);
                 return;

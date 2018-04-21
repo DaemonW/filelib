@@ -25,6 +25,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.daemonw.fileui.activity.FileActivity"/>
+
         <receiver android:name="com.daemonw.filelib.receiver.SdcardMountReceiver">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.MEDIA_MOUNTED" />

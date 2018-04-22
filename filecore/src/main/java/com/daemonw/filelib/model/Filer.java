@@ -35,7 +35,13 @@ public interface Filer {
 
     long lastModified();
 
+    boolean hasChild(String name);
+
     boolean isChecked();
+
     void setChecked(boolean checked);
+
     boolean equals(Object o);
+
+    long length();
 }

@@ -27,7 +27,7 @@
         </activity>
 
         <activity android:name="com.daemonw.fileui.activity.FileActivity"/>
-        <activity android:name="com.grt.filelib.FileManagerActivity"/>
+        <activity android:name="com.daemonw.filelib.FileManagerActivity"/>
 
         <receiver android:name="com.daemonw.filelib.receiver.SdcardMountReceiver">
             <intent-filter android:priority="1000">

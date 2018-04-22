@@ -1,17 +1,18 @@
-package com.grt.filelib;
+package com.daemonw.filelib;
 
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-import com.daemonw.filelib.R;
 import com.daemonw.filelib.model.Filer;
+import com.daemonw.filelib.utils.FileUtil;
 import com.daemonw.fileui.activity.FileActivity;
 
-import java.util.Iterator;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FileManagerActivity extends FileActivity {
+    private List<Filer> mChoosed = new ArrayList<>();
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -32,15 +33,26 @@ public class FileManagerActivity extends FileActivity {
                 }
                 break;
             case R.id.action_delete:
-                Set<Filer> selected = getSelected();
-                Iterator<Filer> iterator = selected.iterator();
-                while (iterator.hasNext()) {
-                    iterator.next().delete();
+                mChoosed.clear();
+                mChoosed.addAll(getSelected());
+                for (Filer f : mChoosed) {
+                    f.delete();
+                }
+                break;
+            case R.id.action_erase:
+                mChoosed.clear();
+                mChoosed.addAll(getSelected());
+                for (Filer f : mChoosed) {
+                    FileUtil.delete(f, 1);
                 }
                 break;
             case R.id.action_copy:
+                mChoosed.clear();
+                mChoosed.addAll(getSelected());
                 break;
             case R.id.action_cut:
+                mChoosed.clear();
+                mChoosed.addAll(getSelected());
                 break;
             case R.id.action_paste:
                 break;

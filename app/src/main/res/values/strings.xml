@@ -9,6 +9,7 @@
     <string name="action_mkdir">New Folder</string>
     <string name="action_mkfile">New File</string>
     <string name="action_delete">Delete</string>
+    <string name="action_erase">Erase</string>
     <string name="action_copy">Copy</string>
     <string name="action_cut">Cut</string>
     <string name="action_paste">Paste</string>

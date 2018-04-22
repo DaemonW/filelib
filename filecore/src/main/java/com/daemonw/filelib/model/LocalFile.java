@@ -2,9 +2,11 @@ package com.daemonw.filelib.model;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import android.support.v4.provider.DocumentFile;
 
 import com.daemonw.filelib.utils.MimeTypes;
+import com.daemonw.filelib.utils.RawFileUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
 /**
@@ -59,7 +62,7 @@ public class LocalFile implements Filer {
 
     @Override
     public boolean delete() {
-        return isRaw() ? mRawFile.delete() : mSafFile.delete();
+        return isRaw() ? RawFileUtil.delete(mPath) : mSafFile.delete();
     }
 
     @Override
@@ -157,6 +160,21 @@ public class LocalFile implements Filer {
         return mContext.getContentResolver().openOutputStream(mSafFile.getUri());
     }
 
+
+    public RandomAccessFile getRandomAccessFile() throws IOException {
+        if (mType != TYPE_RAW) {
+            return null;
+        }
+        return new RandomAccessFile(mPath, "rw");
+    }
+
+    public ParcelFileDescriptor getParcelFileDescriptor() throws IOException {
+        if (mType != TYPE_SAF) {
+            return null;
+        }
+        return mContext.getContentResolver().openFileDescriptor(mSafFile.getUri(), "rw");
+    }
+
     @Override
     public InputStream getInputStream() throws IOException {
         if (isRaw()) {
@@ -215,6 +233,22 @@ public class LocalFile implements Filer {
         return mType == Filer.TYPE_RAW;
     }
 
+    @Override
+    public boolean hasChild(String name) {
+        if (mType == TYPE_RAW) {
+            return new File(mPath, name).exists();
+        }
+        DocumentFile child = mSafFile.findFile(name);
+        return child != null;
+    }
+
+    @Override
+    public long length() {
+        if (mType == TYPE_RAW) {
+            return mRawFile.length();
+        }
+        return mSafFile.length();
+    }
 
     private boolean isContentUri(String uriStr) {
         if (uriStr == null || uriStr.isEmpty()) {

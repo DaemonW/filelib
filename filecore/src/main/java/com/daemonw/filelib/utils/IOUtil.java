@@ -15,7 +15,7 @@ import java.io.OutputStream;
 public class IOUtil {
     public static final int KB = 1024;
 
-    public static byte[] readAll(InputStream in) {
+    public static byte[] read(InputStream in) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         int nRead = 0;
         byte[] buffer = new byte[4096];
@@ -26,13 +26,24 @@ public class IOUtil {
             bos.flush();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            closeStream(in);
+            return null;
         }
         return bos.toByteArray();
     }
 
-    public static void save(byte[] data, OutputStream out) {
+    public static byte[] readAndClose(InputStream in) {
+        byte[] data = read(in);
+        closeStream(in);
+        return data;
+    }
+
+    public static boolean saveAndClose(byte[] data, OutputStream out) {
+        boolean success = save(data, out);
+        closeStream(out);
+        return success;
+    }
+
+    public static boolean save(byte[] data, OutputStream out) {
         int size = data.length;
         try {
             if (size <= 4 * KB) {
@@ -49,13 +60,20 @@ public class IOUtil {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            closeStream(out);
+            return false;
         }
+        return true;
+    }
+
+    public static boolean copyAndClose(InputStream in, OutputStream out) {
+        boolean success = copy(in, out);
+        closeStream(in);
+        closeStream(out);
+        return success;
     }
 
 
-    public static void copy(InputStream in, OutputStream out) {
+    public static boolean copy(InputStream in, OutputStream out) {
         try {
             byte[] buff = new byte[4096];
             int nRead = 0;
@@ -65,10 +83,9 @@ public class IOUtil {
             out.flush();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            closeStream(in);
-            closeStream(out);
+            return false;
         }
+        return true;
     }
 
 
@@ -79,6 +96,7 @@ public class IOUtil {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            stream = null;
         }
     }
 

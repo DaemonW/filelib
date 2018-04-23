@@ -1,16 +1,17 @@
 package com.daemonw.fileui.core;
 
-import android.content.Context;
+import android.app.Activity;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 
 import com.daemonw.filelib.model.Filer;
-import com.daemonw.filelib.model.LocalFile;
+import com.daemonw.filelib.model.HybirdFile;
 import com.daemonw.fileui.widget.adapter.CommonAdapter;
 import com.daemonw.fileui.widget.adapter.ViewHolder;
 import com.example.fileui.R;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,10 +31,11 @@ class FileAdapter extends CommonAdapter<Filer> {
 
     private static SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd hh:mm:ss", Locale.getDefault());
 
-    public FileAdapter(Context context, int layoutResId, String rootPath) {
+    public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType) {
         super(context, layoutResId, new ArrayList<Filer>());
-        mCurrent = new LocalFile(context, rootPath);
-        mDatas.addAll(sortFile(mCurrent.listFiles()));
+        mCurrent = new HybirdFile(context, rootPath, mountType);
+        List<Filer> files = mCurrent.listFiles();
+        mDatas.addAll(sortFile(files));
     }
 
     public void setMultiSelect(boolean enable) {
@@ -79,7 +81,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         mDatas.addAll(sortFile(fileList));
     }
 
-    public void updateToParent() {
+    public void updateToParent() throws IOException {
         if (isRoot()) {
             return;
         }
@@ -90,7 +92,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         fileDepth--;
     }
 
-    public void updateToChild(Filer file) {
+    public void updateToChild(Filer file) throws IOException {
         mCurrent = file;
         mSelected.clear();
         mDatas.clear();
@@ -98,7 +100,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         fileDepth++;
     }
 
-    public void updateCurrent() {
+    public void updateCurrent() throws IOException {
         mDatas.clear();
         mSelected.clear();
         mDatas.addAll(sortFile(mCurrent.listFiles()));

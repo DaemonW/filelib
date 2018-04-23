@@ -17,6 +17,7 @@ import com.daemonw.filelib.exception.PermException;
 import com.daemonw.filelib.reflect.Volume;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -83,18 +84,36 @@ public class StorageUtil {
                 throw new PermException(getPermMessage(v.mountType), v.mountType);
             }
             if (v.mountType == Volume.MOUNT_EXTERNAL) {
-                //rootPath = PreferenceManager.getDefaultSharedPreferences(MainActivity.this).getString(FileConst.PREF_EXTERNAL_URI, null);
                 rootPath = v.mPath;
                 if (!new File(rootPath).canRead()) {
                     rootPath = sp.getString(FileConst.PREF_EXTERNAL_URI, null);
                 }
             } else if (v.mountType == Volume.MOUNT_USB) {
-                rootPath = sp.getString(FileConst.PREF_USB_URI, null);
+                rootPath = v.mPath;
+                if (!new File(rootPath).canRead()) {
+                    rootPath = sp.getString(FileConst.PREF_USB_URI, null);
+                }
             } else {
                 rootPath = v.mPath;
             }
         }
         return rootPath;
+    }
+
+    public static String getMountUri(Activity context, int mountType) {
+        String uri = null;
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        switch (mountType) {
+            case Volume.MOUNT_INTERNAL:
+                break;
+            case Volume.MOUNT_EXTERNAL:
+                uri = sp.getString(FileConst.PREF_EXTERNAL_URI, null);
+                break;
+            case Volume.MOUNT_USB:
+                uri = sp.getString(FileConst.PREF_USB_URI, null);
+                break;
+        }
+        return uri;
     }
 
     private static String getPermMessage(int mountType) {
@@ -107,6 +126,36 @@ public class StorageUtil {
         return msg;
     }
 
+
+    public static DocumentFile findDocumentFile(Context context, String filePath, String rootPath, String rootUri) {
+        if (filePath == null || rootPath == null || rootUri == null) {
+            return null;
+        }
+        if (!filePath.startsWith(rootPath)) {
+            return null;
+        }
+        DocumentFile rootFile = DocumentFile.fromTreeUri(context, Uri.parse(rootUri));
+        if (filePath.equals(rootPath)) {
+            return rootFile;
+        }
+        int startIndex = rootPath.length();
+        if (!rootPath.endsWith("/")) {
+            startIndex = startIndex + 1;
+        }
+        String relativePath = filePath.substring(startIndex);
+        String[] pathSegments = relativePath.split("/");
+        if (pathSegments == null || pathSegments.length == 0) {
+            return rootFile;
+        }
+        DocumentFile file = rootFile;
+        for (String name : pathSegments) {
+            file = file.findFile(name);
+            if (file == null) {
+                break;
+            }
+        }
+        return file;
+    }
 
     public static boolean hasWritePermission(Activity context, int mountType) {
         if (mountType == Volume.MOUNT_INTERNAL) {

@@ -1,8 +1,9 @@
 package com.daemonw.filelib.utils;
 
 import com.daemonw.filelib.model.Filer;
-import com.daemonw.filelib.model.LocalFile;
+import com.daemonw.filelib.model.HybirdFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -56,14 +57,14 @@ public class FileUtil {
         } else {
             ArrayList<Filer> sub = file.listFiles();
             if (sub == null || sub.size() == 0) {
-                return file.delete();
+                return deleteFile(file, eraseCount);
             } else {
                 for (Filer f : sub) {
                     delete(f, eraseCount);
                 }
             }
         }
-        return delete(file, eraseCount);
+        return deleteFile(file, eraseCount);
     }
 
     public static boolean deleteFile(Filer file, int eraseCount) {
@@ -72,24 +73,20 @@ public class FileUtil {
         }
         boolean success = true;
         for (int i = 0; i < eraseCount; i++) {
-            success = success && erase(file);
+            success = success && fillWithZero(file);
         }
         success = success && file.delete();
         return success;
     }
 
-    public static boolean erase(Filer file) {
-        if (!(file instanceof LocalFile)) {
+    public static boolean fillWithZero(Filer file) {
+        if (!(file instanceof HybirdFile)) {
             return false;
         }
         boolean success = true;
-        LocalFile f = (LocalFile) file;
+        HybirdFile f = (HybirdFile) file;
         try {
-            if (f.getFileType() == Filer.TYPE_RAW) {
-                success = RawFileUtil.erase(f.getRandomAccessFile());
-            } else {
-                success = RawFileUtil.erase(f.getParcelFileDescriptor(), f.length());
-            }
+            f.fillWithZero();
         } catch (IOException e) {
             e.printStackTrace();
         }

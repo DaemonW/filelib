@@ -55,7 +55,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         try {
             String rootPath = StorageUtil.getMountPath(this, mountPoint);
             if (rootPath != null) {
-                mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, rootPath);
+                mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, rootPath, mountPoint);
                 mFileAdapterWrapper.setOnItemClickListener(this);
                 mFileListView.setAdapter(mFileAdapterWrapper);
             }
@@ -78,18 +78,19 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
             String path = file.getPath();
             String mime = MimeTypes.getMimeType(file.getName());
             Intent intent = new Intent(Intent.ACTION_VIEW);
-            if (BuildUtils.thanNougat()) {
-                if (file.getFileType() == Filer.TYPE_RAW) {
+            if (file.getType() == Filer.TYPE_INTERNAL) {
+                Uri uri;
+                if (BuildUtils.thanNougat()) {
                     intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    Uri contentUri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileProvider", new File(path));
-                    intent.setDataAndType(contentUri, mime);
+                    uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileProvider", new File(path));
+
+                } else {
+                    uri = Uri.fromFile(new File(path));
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
-            } else {
-                Uri uri = file.getFileType() == Filer.TYPE_RAW ? Uri.fromFile(new File(path)) : Uri.parse(path);
                 intent.setDataAndType(uri, mime);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
             }
-            startActivity(intent);
         }
     }
 
@@ -131,18 +132,21 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                 return;
             }
             String rootPath = treeUri.toString();
-            mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, rootPath);
-            mFileAdapterWrapper.setOnItemClickListener(this);
-            mFileListView.setAdapter(mFileAdapterWrapper);
+            int mountPoint = Volume.MOUNT_INTERNAL;
             getContentResolver().takePersistableUriPermission(treeUri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION |
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
             if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
                 sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+                mountPoint = Volume.MOUNT_EXTERNAL;
             } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
                 sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
+                mountPoint = Volume.MOUNT_USB;
             }
+            mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, rootPath, mountPoint);
+            mFileAdapterWrapper.setOnItemClickListener(this);
+            mFileListView.setAdapter(mFileAdapterWrapper);
         } else {
             Toast.makeText(this, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
         }
@@ -163,7 +167,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     public void switchVolume(int mountPoint) {
         try {
             String mountPath = StorageUtil.getMountPath(this, mountPoint);
-            mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, mountPath);
+            mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, mountPath, mountPoint);
             mFileListView.setAdapter(mFileAdapterWrapper);
         } catch (PermException e) {
             int mountType = e.getMountType();

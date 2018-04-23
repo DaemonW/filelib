@@ -31,8 +31,8 @@ import io.reactivex.schedulers.Schedulers;
 
 public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     private static final int BASE_ITEM_TYPE_HEADER = 100000;
-    private static final int BASE_ITEM_TYPE_FOOTER = 200000;
     private PopupWindow mLoading;
+    private boolean isLoading = false;
 
     private SparseArrayCompat<View> mHeaderViews = new SparseArrayCompat<>();
 
@@ -41,9 +41,9 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     private CompositeDisposable mDisposable;
 
 
-    public FileAdapterWrapper(Activity context, int layoutResId, String rootPath) {
+    public FileAdapterWrapper(Activity context, int layoutResId, String rootPath, int mountType) {
         mContext = context;
-        mInnerAdapter = new FileAdapter(context, layoutResId, rootPath);
+        mInnerAdapter = new FileAdapter(context, layoutResId, rootPath, mountType);
         mDisposable = new CompositeDisposable();
         initPopupLoading(context);
         addHeaderView(inflateHeader(context), new View.OnClickListener() {
@@ -160,11 +160,15 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     }
 
     public void updateToParent() {
+        if (isLoading) {
+            return;
+        }
         mDisposable.add(Single.just(1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object obj) throws Exception {
+                        isLoading = true;
                         showLoading(mContext);
                     }
                 }).observeOn(Schedulers.io())
@@ -180,16 +184,21 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
                     public void accept(Object o) throws Exception {
                         notifyDataSetChanged();
                         dismissLoading();
+                        isLoading = false;
                     }
                 }));
     }
 
     public void updateToChild(Filer file) {
+        if (isLoading) {
+            return;
+        }
         mDisposable.add(Single.just(file)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object o) throws Exception {
+                        isLoading = true;
                         showLoading(mContext);
                     }
                 }).observeOn(Schedulers.io())
@@ -205,17 +214,22 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
                     public void accept(Boolean o) throws Exception {
                         notifyDataSetChanged();
                         dismissLoading();
+                        isLoading = false;
                     }
                 }));
     }
 
 
     public void updateCurrent() {
+        if (isLoading) {
+            return;
+        }
         mDisposable.add(Single.just(1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object o) throws Exception {
+                        isLoading = true;
                         showLoading(mContext);
                     }
                 }).observeOn(Schedulers.io())
@@ -231,6 +245,7 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
                     public void accept(Boolean o) throws Exception {
                         notifyDataSetChanged();
                         dismissLoading();
+                        isLoading = false;
                     }
                 }));
     }
@@ -268,11 +283,13 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     }
 
     private void dismissLoading() {
-        mLoading.dismiss();
+        if (mLoading != null && mLoading.isShowing()) {
+            mLoading.dismiss();
+        }
     }
 
     public void setMultiSelect(boolean enable) {
-        if(!enable){
+        if (!enable) {
             mInnerAdapter.clearSelect();
         }
         mInnerAdapter.setMultiSelect(enable);

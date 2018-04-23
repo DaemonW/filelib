@@ -1,6 +1,8 @@
 package com.daemonw.filelib.exception;
 
-public class PermException extends Exception {
+import java.io.IOException;
+
+public class PermException extends IOException {
     private int mountType;
 
     public static final int PERM_NO_ACCESS_ON_EXTERNAL = 0;

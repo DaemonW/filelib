@@ -49,7 +49,7 @@ public class RawFileUtil {
         return file.delete();
     }
 
-    public static boolean erase(RandomAccessFile file) {
+    public static boolean fillWithZero(RandomAccessFile file) {
         boolean success = true;
         try {
             byte[] buff = new byte[4096];
@@ -69,7 +69,7 @@ public class RawFileUtil {
         return success;
     }
 
-    public static boolean erase(ParcelFileDescriptor file, long length) {
+    public static boolean fillWithZero(ParcelFileDescriptor file, long length) {
         boolean success = true;
         ParcelFileDescriptor.AutoCloseOutputStream out = new ParcelFileDescriptor.AutoCloseOutputStream(file);
         try {

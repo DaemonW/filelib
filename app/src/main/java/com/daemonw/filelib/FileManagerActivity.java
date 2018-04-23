@@ -1,13 +1,17 @@
 package com.daemonw.filelib;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.EditText;
 
 import com.daemonw.filelib.model.Filer;
 import com.daemonw.filelib.utils.FileUtil;
 import com.daemonw.fileui.activity.FileActivity;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,18 +23,10 @@ public class FileManagerActivity extends FileActivity {
         int id = item.getItemId();
         switch (id) {
             case R.id.action_mkdir:
-                try {
-                    getCurrent().mkDir("test_mkdir");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                showCreateDirDialog();
                 break;
             case R.id.action_mkfile:
-                try {
-                    getCurrent().createNewFile("test_mkfile");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                showCreateFileDialog();
                 break;
             case R.id.action_delete:
                 mChoosed.clear();
@@ -73,5 +69,49 @@ public class FileManagerActivity extends FileActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         return super.onPrepareOptionsMenu(menu);
+    }
+
+    private void showCreateDirDialog() {
+        EditText text = new EditText(this);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(text)
+                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String name = text.getText().toString();
+                        if (!name.isEmpty()) {
+                            try {
+                                getCurrent().mkDir(name);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                })
+                .setNegativeButton("cancel", null)
+                .create();
+        dialog.show();
+    }
+
+    private void showCreateFileDialog() {
+        EditText text = new EditText(this);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(text)
+                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String name = text.getText().toString();
+                        if (!name.isEmpty()) {
+                            try {
+                                getCurrent().createNewFile(name);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                })
+                .setNegativeButton("cancel", null)
+                .create();
+        dialog.show();
     }
 }

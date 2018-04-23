@@ -1,47 +1,63 @@
 package com.daemonw.filelib.model;
 
+import com.daemonw.filelib.reflect.Volume;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
-public interface Filer {
-    public static final int TYPE_RAW = 0;
-    public static final int TYPE_SAF = 1;
+public abstract class Filer {
+    public static final int TYPE_INTERNAL = Volume.MOUNT_INTERNAL;
+    public static final int TYPE_EXTERNAL = Volume.MOUNT_EXTERNAL;
+    public static final int TYPE_USB = Volume.MOUNT_USB;
 
-    boolean delete();
+    protected boolean mChecked;
+    protected String mPath;
+    protected int mType;
 
-    Filer createNewFile(String fileName) throws IOException;
 
-    Filer mkDir(String folderName) throws IOException;
+    public abstract boolean delete();
 
-    String getName();
+    public abstract Filer createNewFile(String fileName) throws IOException;
 
-    String getPath();
+    public abstract Filer mkDir(String folderName) throws IOException;
 
-    Filer getParentFile();
+    public abstract String getName();
 
-    String getParentPath();
+    public abstract String getPath();
 
-    OutputStream getOutStream() throws IOException;
+    public abstract Filer getParentFile();
 
-    InputStream getInputStream() throws IOException;
+    public abstract String getParentPath();
 
-    int getFileType();
+    public abstract OutputStream getOutStream() throws IOException;
 
-    boolean isDirectory();
+    public abstract InputStream getInputStream() throws IOException;
 
-    ArrayList<Filer> listFiles();
+    public abstract boolean isDirectory();
 
-    long lastModified();
+    public abstract ArrayList<Filer> listFiles();
 
-    boolean hasChild(String name);
+    public abstract long lastModified();
 
-    boolean isChecked();
+    public abstract boolean hasChild(String fileName);
 
-    void setChecked(boolean checked);
+    public abstract boolean equals(Object o);
 
-    boolean equals(Object o);
+    public abstract long length();
 
-    long length();
+    public abstract void fillWithZero() throws IOException;
+
+    public int getType() {
+        return mType;
+    }
+
+    public boolean isChecked() {
+        return mChecked;
+    }
+
+    public void setChecked(boolean checked) {
+        this.mChecked = checked;
+    }
 }

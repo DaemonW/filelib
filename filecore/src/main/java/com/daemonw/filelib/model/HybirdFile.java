@@ -98,8 +98,8 @@ public class HybirdFile extends Filer {
     }
 
     @Override
-    public void fillWithZero() throws IOException {
-        fileDelegate.fillWithZero();
+    public boolean fillWithZero() throws IOException {
+        return fileDelegate.fillWithZero();
     }
 
     @Override

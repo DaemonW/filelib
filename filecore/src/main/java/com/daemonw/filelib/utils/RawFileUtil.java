@@ -2,9 +2,12 @@ package com.daemonw.filelib.utils;
 
 import android.os.ParcelFileDescriptor;
 
+import com.daemonw.filelib.model.Filer;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 
 public class RawFileUtil {
 
@@ -28,25 +31,32 @@ public class RawFileUtil {
         return success;
     }
 
-    public static boolean delete(String fileName) {
-        File file = new File(fileName);
-        if (file.isFile()) {
-            return rm(file);
-        } else {
-            File[] sub = file.listFiles();
-            if (sub == null || sub.length == 0) {
-                return rm(file);
-            } else {
-                for (File f : sub) {
-                    delete(f.getAbsolutePath());
+    public static boolean delete(File file, int eraseCount) {
+        if (file.isDirectory()) {
+            File[] subFile = file.listFiles();
+            if (subFile.length > 0) {
+                for (File f : subFile) {
+                    delete(f, eraseCount);
                 }
             }
         }
-        return rm(file);
+        return deleteFile(file, eraseCount);
     }
 
-    private static boolean rm(File file) {
-        return file.delete();
+    private static boolean deleteFile(File file, int eraseCount) {
+        if (eraseCount <= 0 || file.isDirectory()) {
+            return file.delete();
+        }
+        boolean success = true;
+        for (int i = 0; i < eraseCount; i++) {
+            try {
+                success = success && fillWithZero(new RandomAccessFile(file, "rw"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        success = success && file.delete();
+        return success;
     }
 
     public static boolean fillWithZero(RandomAccessFile file) {

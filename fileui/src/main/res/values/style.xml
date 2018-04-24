@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="FileChooseDialogTheme" parent="Theme.AppCompat.Light.Dialog">
+        <!--设置无标题-->
+        <item name="windowNoTitle">true</item>
+    </style>
+</resources>

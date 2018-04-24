@@ -22,14 +22,22 @@ import com.daemonw.filelib.reflect.Volume;
 import com.daemonw.filelib.utils.BuildUtils;
 import com.daemonw.filelib.utils.MimeTypes;
 import com.daemonw.filelib.utils.PermissionUtil;
+import com.daemonw.filelib.utils.RxUtil;
 import com.daemonw.filelib.utils.StorageUtil;
+import com.daemonw.fileui.R;
 import com.daemonw.fileui.core.FileAdapterWrapper;
+import com.daemonw.fileui.core.UIUtil;
 import com.daemonw.fileui.widget.adapter.MultiItemTypeAdapter;
 import com.daemonw.fileui.widget.adapter.ViewHolder;
-import com.example.fileui.R;
 
 import java.io.File;
 import java.util.Set;
+
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 public class FileActivity extends AppCompatActivity implements MultiItemTypeAdapter.OnItemClickListener {
     private final static String LOG_TAG = FileActivity.class.getSimpleName();
@@ -38,11 +46,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     private FileAdapterWrapper mFileAdapterWrapper;
     private int mountPoint = Volume.MOUNT_INTERNAL;
     private SharedPreferences sp;
+    private boolean isLoading = false;
+    private Activity mContext;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.file_activity);
+        mContext = this;
         mFileListView = (RecyclerView) findViewById(R.id.file_list);
         mFileListView.setLayoutManager(new LinearLayoutManager(this));
         sp = PreferenceManager.getDefaultSharedPreferences(this);
@@ -55,8 +66,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         try {
             String rootPath = StorageUtil.getMountPath(this, mountPoint);
             if (rootPath != null) {
-                mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, rootPath, mountPoint);
-                mFileAdapterWrapper.setOnItemClickListener(this);
+                mFileAdapterWrapper = initFileAdapter(rootPath, mountPoint);
                 mFileListView.setAdapter(mFileAdapterWrapper);
             }
         } catch (PermException e) {
@@ -71,9 +81,8 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         if (file == null) {
             return;
         }
-
         if (file.isDirectory()) {
-            mFileAdapterWrapper.updateToChild(file);
+            updateToChild(file);
         } else {
             String path = file.getPath();
             String mime = MimeTypes.getMimeType(file.getName());
@@ -118,13 +127,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         }
 
         if (!mFileAdapterWrapper.isRoot()) {
-            mFileAdapterWrapper.updateToParent();
+            updateToParent();
             return;
         }
 
         super.onBackPressed();
     }
 
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
         if (resultCode == Activity.RESULT_OK) {
             Uri treeUri = resultData.getData();
@@ -152,23 +162,128 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         }
     }
 
-    public Set<Filer> getSelected() {
+    protected Set<Filer> getSelected() {
         return mFileAdapterWrapper.getSelected();
     }
 
-    public Filer getCurrent() {
+    protected Filer getCurrent() {
         return mFileAdapterWrapper.getCurrent();
     }
 
-    public void refresh() {
-        mFileAdapterWrapper.updateCurrent();
+    protected void refresh() {
+        updateCurrent();
     }
 
-    public void switchVolume(int mountPoint) {
+
+    public void updateToParent() {
+        if (isLoading) {
+            return;
+        }
+        RxUtil.add(Single.just(1)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(new Consumer<Object>() {
+                    @Override
+                    public void accept(Object obj) throws Exception {
+                        isLoading = true;
+                        UIUtil.showLoading(mContext);
+                    }
+                }).observeOn(Schedulers.io())
+                .map(new Function<Integer, Boolean>() {
+                    @Override
+                    public Boolean apply(Integer integer) throws Exception {
+                        mFileAdapterWrapper.updateToParent();
+                        return true;
+                    }
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Object>() {
+                    @Override
+                    public void accept(Object o) throws Exception {
+                        mFileAdapterWrapper.notifyDataSetChanged();
+                        UIUtil.cancelLoading();
+                        isLoading = false;
+                    }
+                }));
+    }
+
+    public void updateToChild(Filer file) {
+        if (isLoading) {
+            return;
+        }
+        RxUtil.add(Single.just(file)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(new Consumer<Object>() {
+                    @Override
+                    public void accept(Object o) throws Exception {
+                        isLoading = true;
+                        UIUtil.showLoading(mContext);
+                    }
+                }).observeOn(Schedulers.io())
+                .map(new Function<Filer, Boolean>() {
+                    @Override
+                    public Boolean apply(Filer localFile) throws Exception {
+                        mFileAdapterWrapper.updateToChild(localFile);
+                        return true;
+                    }
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean o) throws Exception {
+                        mFileAdapterWrapper.notifyDataSetChanged();
+                        UIUtil.cancelLoading();
+                        isLoading = false;
+                    }
+                }));
+    }
+
+
+    public void updateCurrent() {
+        if (isLoading) {
+            return;
+        }
+        RxUtil.add(Single.just(1)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(new Consumer<Object>() {
+                    @Override
+                    public void accept(Object o) throws Exception {
+                        isLoading = true;
+                        UIUtil.showLoading(mContext);
+                    }
+                }).observeOn(Schedulers.io())
+                .map(new Function<Integer, Boolean>() {
+                    @Override
+                    public Boolean apply(Integer integer) throws Exception {
+                        mFileAdapterWrapper.updateCurrent();
+                        return true;
+                    }
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean o) throws Exception {
+                        mFileAdapterWrapper.notifyDataSetChanged();
+                        UIUtil.cancelLoading();
+                        isLoading = false;
+                    }
+                }));
+    }
+
+    private FileAdapterWrapper initFileAdapter(String rootPath, int mountPoint) {
+        FileAdapterWrapper adapter = new FileAdapterWrapper(this, R.layout.file_item, rootPath, mountPoint);
+        adapter.setOnItemClickListener(this);
+        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+            @Override
+            public void onHeaderClicked() {
+                updateToParent();
+            }
+        });
+        return adapter;
+    }
+
+    protected void switchVolume(int mountPoint) {
         try {
             String mountPath = StorageUtil.getMountPath(this, mountPoint);
-            mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, mountPath, mountPoint);
+            mFileAdapterWrapper = initFileAdapter(mountPath, mountPoint);
             mFileListView.setAdapter(mFileAdapterWrapper);
+            this.mountPoint = mountPoint;
         } catch (PermException e) {
             int mountType = e.getMountType();
             PermissionUtil.requestPermission(this, mountType);

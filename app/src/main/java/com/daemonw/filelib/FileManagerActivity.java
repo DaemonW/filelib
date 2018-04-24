@@ -32,7 +32,7 @@ public class FileManagerActivity extends FileActivity {
                 mChoosed.clear();
                 mChoosed.addAll(getSelected());
                 for (Filer f : mChoosed) {
-                    f.delete();
+                    FileUtil.deleteFile(f, 0);
                 }
                 break;
             case R.id.action_erase:
@@ -82,6 +82,7 @@ public class FileManagerActivity extends FileActivity {
                         if (!name.isEmpty()) {
                             try {
                                 getCurrent().mkDir(name);
+                                refresh();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -104,6 +105,7 @@ public class FileManagerActivity extends FileActivity {
                         if (!name.isEmpty()) {
                             try {
                                 getCurrent().createNewFile(name);
+                                refresh();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }

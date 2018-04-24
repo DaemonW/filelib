@@ -1,2 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.fileui" />
+    package="com.daemonw.fileui">
+
+    <application>
+        <activity android:name="com.daemonw.fileui.activity.FileActivity" />
+        <activity
+            android:name="com.daemonw.fileui.activity.FileChooseActivity"
+            android:theme="@style/FileChooseDialogTheme" />
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.daemonw.filelib.fileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

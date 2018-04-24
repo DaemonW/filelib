@@ -223,14 +223,14 @@ public class UsbFile extends Filer {
     }
 
     @Override
-    public void fillWithZero() throws IOException {
+    public boolean fillWithZero() throws IOException {
         if (canRawWrite()) {
             RandomAccessFile raf = new RandomAccessFile(mPath, "rw");
-            RawFileUtil.fillWithZero(raf);
+            return RawFileUtil.fillWithZero(raf);
         } else {
             DocumentFile file = getDocumentFile();
             ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(mSafFile.getUri(), "rw");
-            RawFileUtil.fillWithZero(pfd, length());
+            return RawFileUtil.fillWithZero(pfd, length());
         }
     }
 
@@ -240,7 +240,15 @@ public class UsbFile extends Filer {
     }
 
     public boolean canRawRead() {
-        return isRawPath && mRawFile.canRead();
+        boolean canRead = isRawPath && mRawFile.canRead();
+        if (canRead) {
+            return true;
+        }
+        //特殊文件,不可读写
+        if (getName().equals(".android_secure")) {
+            return true;
+        }
+        return false;
     }
 
 

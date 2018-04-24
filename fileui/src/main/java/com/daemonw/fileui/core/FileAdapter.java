@@ -4,14 +4,14 @@ import android.app.Activity;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 
 import com.daemonw.filelib.model.Filer;
 import com.daemonw.filelib.model.HybirdFile;
+import com.daemonw.fileui.R;
 import com.daemonw.fileui.widget.adapter.CommonAdapter;
 import com.daemonw.fileui.widget.adapter.ViewHolder;
-import com.example.fileui.R;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,14 +51,15 @@ class FileAdapter extends CommonAdapter<Filer> {
         holder.setText(R.id.file_name, file.getName());
         holder.setText(R.id.file_modified, formater.format(new Date(file.lastModified())));
         if (file.isDirectory()) {
-            holder.setImageResource(R.id.file_icon, R.drawable.ic_folder_main);
+            holder.setImageResource(R.id.file_icon, R.drawable.ic_folder);
         } else {
-            holder.setImageResource(R.id.file_icon, R.drawable.ic_file_fab);
+            holder.setImageResource(R.id.file_icon, R.drawable.ic_file);
         }
         CheckBox checkBox = holder.getView(R.id.file_check);
         checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                file.setChecked(isChecked);
                 if (isChecked) {
                     mSelected.add(file);
                 } else {
@@ -81,7 +82,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         mDatas.addAll(sortFile(fileList));
     }
 
-    public void updateToParent() throws IOException {
+    public void updateToParent() {
         if (isRoot()) {
             return;
         }
@@ -92,7 +93,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         fileDepth--;
     }
 
-    public void updateToChild(Filer file) throws IOException {
+    public void updateToChild(Filer file) {
         mCurrent = file;
         mSelected.clear();
         mDatas.clear();
@@ -100,7 +101,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         fileDepth++;
     }
 
-    public void updateCurrent() throws IOException {
+    public void updateCurrent() {
         mDatas.clear();
         mSelected.clear();
         mDatas.addAll(sortFile(mCurrent.listFiles()));
@@ -119,6 +120,9 @@ class FileAdapter extends CommonAdapter<Filer> {
     }
 
     public void clearSelect() {
+        for (Filer f : mSelected) {
+            f.setChecked(false);
+        }
         mSelected.clear();
     }
 

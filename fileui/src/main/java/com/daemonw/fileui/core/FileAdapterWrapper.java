@@ -5,51 +5,39 @@ import android.content.Context;
 import android.support.v4.util.SparseArrayCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.daemonw.filelib.model.Filer;
+import com.daemonw.fileui.R;
 import com.daemonw.fileui.widget.adapter.MultiItemTypeAdapter;
 import com.daemonw.fileui.widget.adapter.ViewHolder;
 import com.daemonw.fileui.widget.adapter.WrapperUtils;
-import com.example.fileui.R;
 
 import java.util.List;
 import java.util.Set;
 
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
-
 public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     private static final int BASE_ITEM_TYPE_HEADER = 100000;
-    private PopupWindow mLoading;
-    private boolean isLoading = false;
 
     private SparseArrayCompat<View> mHeaderViews = new SparseArrayCompat<>();
 
     private FileAdapter mInnerAdapter;
     private Activity mContext;
-    private CompositeDisposable mDisposable;
+    private OnHeadClickListener mHeadClickListener;
 
 
     public FileAdapterWrapper(Activity context, int layoutResId, String rootPath, int mountType) {
         mContext = context;
         mInnerAdapter = new FileAdapter(context, layoutResId, rootPath, mountType);
-        mDisposable = new CompositeDisposable();
-        initPopupLoading(context);
-        addHeaderView(inflateHeader(context), new View.OnClickListener() {
+        addHeaderView(getHeaderView(context), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateToParent();
+                if (mHeadClickListener != null) {
+                    mHeadClickListener.onHeaderClicked();
+                }
             }
         });
     }
@@ -160,132 +148,21 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     }
 
     public void updateToParent() {
-        if (isLoading) {
-            return;
-        }
-        mDisposable.add(Single.just(1)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object obj) throws Exception {
-                        isLoading = true;
-                        showLoading(mContext);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Integer, Boolean>() {
-                    @Override
-                    public Boolean apply(Integer integer) throws Exception {
-                        mInnerAdapter.updateToParent();
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        notifyDataSetChanged();
-                        dismissLoading();
-                        isLoading = false;
-                    }
-                }));
+        mInnerAdapter.updateToParent();
     }
 
     public void updateToChild(Filer file) {
-        if (isLoading) {
-            return;
-        }
-        mDisposable.add(Single.just(file)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        isLoading = true;
-                        showLoading(mContext);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Filer, Boolean>() {
-                    @Override
-                    public Boolean apply(Filer localFile) throws Exception {
-                        mInnerAdapter.updateToChild(localFile);
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean o) throws Exception {
-                        notifyDataSetChanged();
-                        dismissLoading();
-                        isLoading = false;
-                    }
-                }));
+        mInnerAdapter.updateToChild(file);
     }
 
 
     public void updateCurrent() {
-        if (isLoading) {
-            return;
-        }
-        mDisposable.add(Single.just(1)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        isLoading = true;
-                        showLoading(mContext);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Integer, Boolean>() {
-                    @Override
-                    public Boolean apply(Integer integer) throws Exception {
-                        mInnerAdapter.updateCurrent();
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean o) throws Exception {
-                        notifyDataSetChanged();
-                        dismissLoading();
-                        isLoading = false;
-                    }
-                }));
+        mInnerAdapter.updateCurrent();
     }
+
 
     public boolean isRoot() {
         return mInnerAdapter.isRoot();
-    }
-
-    private View inflateHeader(Context context) {
-        View v = View.inflate(context, R.layout.file_list_header, null);
-        ImageView icon = v.findViewById(R.id.file_icon);
-        icon.setImageResource(R.drawable.ic_folder_main);
-        TextView name = v.findViewById(R.id.file_name);
-        name.setText("...");
-        return v;
-    }
-
-    private void initPopupLoading(Activity context) {
-        mLoading = new PopupWindow();
-        mLoading.setHeight(ViewGroup.LayoutParams.MATCH_PARENT);
-        mLoading.setWidth(ViewGroup.LayoutParams.MATCH_PARENT);
-        //设置不能取消
-        mLoading.setOutsideTouchable(false);
-        mLoading.setFocusable(false);
-        View view = LayoutInflater.from(context).inflate(R.layout.loading, null);
-        mLoading.setContentView(view);
-    }
-
-    private void showLoading(Activity context) {
-        if (mLoading == null) {
-            initPopupLoading(context);
-        }
-        mLoading.showAtLocation(context.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
-
-    }
-
-    private void dismissLoading() {
-        if (mLoading != null && mLoading.isShowing()) {
-            mLoading.dismiss();
-        }
     }
 
     public void setMultiSelect(boolean enable) {
@@ -305,5 +182,22 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
 
     public Filer getCurrent() {
         return mInnerAdapter.getCurrent();
+    }
+
+    private View getHeaderView(Context context) {
+        View v = View.inflate(context, R.layout.file_list_header, null);
+        ImageView icon = v.findViewById(R.id.file_icon);
+        icon.setImageResource(R.drawable.ic_folder);
+        TextView name = v.findViewById(R.id.file_name);
+        name.setText("...");
+        return v;
+    }
+
+    public void setOnHeadClickListener(OnHeadClickListener headClickListener) {
+        this.mHeadClickListener = headClickListener;
+    }
+
+    public interface OnHeadClickListener {
+        void onHeaderClicked();
     }
 }

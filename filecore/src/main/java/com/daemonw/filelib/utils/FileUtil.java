@@ -52,14 +52,10 @@ public class FileUtil {
     }
 
     public static boolean delete(Filer file, int eraseCount) {
-        if (!file.isDirectory()) {
-            return deleteFile(file, eraseCount);
-        } else {
-            ArrayList<Filer> sub = file.listFiles();
-            if (sub == null || sub.size() == 0) {
-                return deleteFile(file, eraseCount);
-            } else {
-                for (Filer f : sub) {
+        if (file.isDirectory()) {
+            ArrayList<Filer> subFile = file.listFiles();
+            if (subFile.size() > 0) {
+                for (Filer f : subFile) {
                     delete(f, eraseCount);
                 }
             }
@@ -68,7 +64,7 @@ public class FileUtil {
     }
 
     public static boolean deleteFile(Filer file, int eraseCount) {
-        if (eraseCount <= 0) {
+        if (eraseCount <= 0 || file.isDirectory()) {
             return file.delete();
         }
         boolean success = true;
@@ -80,17 +76,12 @@ public class FileUtil {
     }
 
     public static boolean fillWithZero(Filer file) {
-        if (!(file instanceof HybirdFile)) {
-            return false;
-        }
-        boolean success = true;
-        HybirdFile f = (HybirdFile) file;
         try {
-            f.fillWithZero();
+            return file.fillWithZero();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return success;
+        return false;
     }
 
 }

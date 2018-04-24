@@ -2,7 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="2dp">
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp">
 
     <ImageView
         android:id="@+id/file_icon"
@@ -10,8 +11,7 @@
         android:layout_height="48dp"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
-        android:layout_marginEnd="10dp"
-        android:src="@drawable/ic_folder_backup" />
+        android:layout_marginEnd="10dp" />
 
     <TextView
         android:id="@+id/file_name"
@@ -20,7 +20,6 @@
         android:layout_toEndOf="@+id/file_icon"
         android:ellipsize="end"
         android:singleLine="true"
-        android:text="Android"
         android:textSize="18sp" />
 
     <TextView
@@ -30,14 +29,13 @@
         android:layout_below="@+id/file_name"
         android:layout_toEndOf="@+id/file_icon"
         android:singleLine="true"
-        android:text="2018-04-20 18:30:42"
         android:textSize="16sp" />
 
     <CheckBox
         android:id="@+id/file_check"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_alignParentEnd="true"/>
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true" />
 
 </RelativeLayout>

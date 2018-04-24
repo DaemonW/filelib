@@ -47,7 +47,7 @@ public abstract class Filer {
 
     public abstract long length();
 
-    public abstract void fillWithZero() throws IOException;
+    public abstract boolean fillWithZero() throws IOException;
 
     public int getType() {
         return mType;

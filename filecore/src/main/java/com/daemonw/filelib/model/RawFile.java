@@ -130,9 +130,9 @@ public class RawFile extends Filer {
     }
 
     @Override
-    public void fillWithZero() throws IOException {
+    public boolean fillWithZero() throws IOException {
         RandomAccessFile raf = new RandomAccessFile(mPath, "rw");
-        RawFileUtil.fillWithZero(raf);
+        return RawFileUtil.fillWithZero(raf);
     }
 
 

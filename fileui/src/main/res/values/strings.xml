@@ -2,6 +2,7 @@
     <string name="app_name">fileui</string>
     <string name="warn_grant_perm">You need choose the volume to grant permission</string>
     <string name="tip_choose_file">Long click item to enable select mode</string>
+    <string name="warm_no_permission">Sorry, you need to grant the permission first.</string>
 
     <string name="file_choose_confirm">ok</string>
     <string name="file_choose_cancel">cancel</string>

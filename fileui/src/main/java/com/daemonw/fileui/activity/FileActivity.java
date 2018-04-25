@@ -6,31 +6,30 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Toast;
 
-import com.daemonw.filelib.BuildConfig;
 import com.daemonw.filelib.FileConst;
 import com.daemonw.filelib.exception.PermException;
 import com.daemonw.filelib.model.Filer;
 import com.daemonw.filelib.reflect.Volume;
-import com.daemonw.filelib.utils.BuildUtils;
-import com.daemonw.filelib.utils.MimeTypes;
 import com.daemonw.filelib.utils.PermissionUtil;
 import com.daemonw.filelib.utils.RxUtil;
 import com.daemonw.filelib.utils.StorageUtil;
 import com.daemonw.fileui.R;
 import com.daemonw.fileui.core.FileAdapterWrapper;
 import com.daemonw.fileui.core.UIUtil;
+import com.daemonw.fileui.core.VolumeAdapter;
 import com.daemonw.fileui.widget.adapter.MultiItemTypeAdapter;
 import com.daemonw.fileui.widget.adapter.ViewHolder;
 
-import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 import io.reactivex.Single;
@@ -42,138 +41,106 @@ import io.reactivex.schedulers.Schedulers;
 public class FileActivity extends AppCompatActivity implements MultiItemTypeAdapter.OnItemClickListener {
     private final static String LOG_TAG = FileActivity.class.getSimpleName();
 
-    private RecyclerView mFileListView;
-    private FileAdapterWrapper mFileAdapterWrapper;
-    private int mountPoint = Volume.MOUNT_INTERNAL;
-    private SharedPreferences sp;
-    private boolean isLoading = false;
     private Activity mContext;
+    private RecyclerView mVolumeList;
+    private RecyclerView mFileList;
+    private FileChooseActivity.OnFileChooseListener mOnFileSelectListener;
+    private boolean isLoading = false;
+    private VolumeAdapter mVolumeAdapter;
+    private FileAdapterWrapper mFileAdapter;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.file_activity);
         mContext = this;
-        mFileListView = (RecyclerView) findViewById(R.id.file_list);
-        mFileListView.setLayoutManager(new LinearLayoutManager(this));
-        sp = PreferenceManager.getDefaultSharedPreferences(this);
-        Bundle bundle = getIntent().getExtras();
-        mountPoint = bundle != null ? bundle.getInt("mount_point", Volume.MOUNT_UNKNOWN) : Volume.MOUNT_UNKNOWN;
-        if (mountPoint == Volume.MOUNT_UNKNOWN) {
-            mountPoint = sp.getInt("PREF_MOUNT_POINT", Volume.MOUNT_INTERNAL);
-        }
+        setContentView(R.layout.file_activity);
+        mVolumeList = findViewById(R.id.volume_list);
+        mFileList = findViewById(R.id.file_list);
+        init();
+        //fixSize();
+    }
 
-        try {
-            String rootPath = StorageUtil.getMountPath(this, mountPoint);
-            if (rootPath != null) {
-                mFileAdapterWrapper = initFileAdapter(rootPath, mountPoint);
-                mFileListView.setAdapter(mFileAdapterWrapper);
+    private void init() {
+        final List<Volume> volumes = StorageUtil.getVolumes(mContext);
+        mVolumeAdapter = new VolumeAdapter(mContext, R.layout.volume_item, volumes);
+        mVolumeAdapter.setOnItemClickListener(new MultiItemTypeAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, ViewHolder holder, int position) {
+                Volume v = volumes.get(position);
+                mFileAdapter = getFileAdapter(v.mountType);
+                if (mFileAdapter != null) {
+                    mVolumeList.setVisibility(View.GONE);
+                    mFileList.setLayoutManager(new LinearLayoutManager(mContext));
+                    mFileList.setAdapter(mFileAdapter);
+                    mFileList.setVisibility(View.VISIBLE);
+                }
             }
+
+            @Override
+            public boolean onItemLongClick(View view, ViewHolder holder, int position) {
+                return false;
+            }
+        });
+        mVolumeList.setLayoutManager(new LinearLayoutManager(mContext));
+        mVolumeList.setAdapter(mVolumeAdapter);
+    }
+
+    private FileAdapterWrapper getFileAdapter(int mountType) {
+        FileAdapterWrapper adapter = null;
+        try {
+            String rootPath = StorageUtil.getMountPath(mContext, mountType);
+            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType);
+            adapter.setOnItemClickListener(this);
+            adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+                @Override
+                public void onHeaderClicked() {
+                    updateToParent();
+                }
+            });
         } catch (PermException e) {
-            int mountType = e.getMountType();
-            PermissionUtil.requestPermission(this, mountType);
+            PermissionUtil.requestPermission(mContext, ((PermException) e).getMountType());
         }
+        return adapter;
     }
 
     @Override
     public void onItemClick(View view, ViewHolder holder, int position) {
-        Filer file = mFileAdapterWrapper.getItem(position);
+        Filer file = mFileAdapter.getItem(position);
         if (file == null) {
             return;
         }
         if (file.isDirectory()) {
             updateToChild(file);
         } else {
-            String path = file.getPath();
-            String mime = MimeTypes.getMimeType(file.getName());
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            if (file.getType() == Filer.TYPE_INTERNAL) {
-                Uri uri;
-                if (BuildUtils.thanNougat()) {
-                    intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".fileProvider", new File(path));
-
-                } else {
-                    uri = Uri.fromFile(new File(path));
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                }
-                intent.setDataAndType(uri, mime);
-                startActivity(intent);
+            if (!mFileAdapter.isMultiSelect()) {
+                Toast.makeText(mContext, R.string.tip_choose_file, Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     @Override
     public boolean onItemLongClick(View view, ViewHolder holder, int position) {
-        if (!mFileAdapterWrapper.isMultiSelect()) {
-            mFileAdapterWrapper.setMultiSelect(true);
-            mFileAdapterWrapper.notifyDataSetChanged();
+        if (!mFileAdapter.isMultiSelect()) {
+            mFileAdapter.setMultiSelect(true);
+            mFileAdapter.notifyDataSetChanged();
             return true;
         }
         return false;
     }
 
-    @Override
-    public void onBackPressed() {
-        if (mFileAdapterWrapper == null) {
-            super.onBackPressed();
+    public void fixSize() {
+        WindowManager.LayoutParams wp = getWindow().getAttributes();
+        if (wp == null) {
             return;
         }
-
-        if (mFileAdapterWrapper.isMultiSelect()) {
-            mFileAdapterWrapper.setMultiSelect(false);
-            mFileAdapterWrapper.notifyDataSetChanged();
-            return;
-        }
-
-        if (!mFileAdapterWrapper.isRoot()) {
-            updateToParent();
-            return;
-        }
-
-        super.onBackPressed();
+        DisplayMetrics dm = new DisplayMetrics();
+        mContext.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        wp.width = (int) (dm.widthPixels * 0.9);
+        getWindow().setAttributes(wp);
+        ViewGroup.LayoutParams fp = mFileList.getLayoutParams();
+        fp.height = (int) (dm.heightPixels * 0.6);
+        mFileList.setLayoutParams(fp);
     }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
-        if (resultCode == Activity.RESULT_OK) {
-            Uri treeUri = resultData.getData();
-            if (treeUri == null) {
-                return;
-            }
-            String rootPath = treeUri.toString();
-            int mountPoint = Volume.MOUNT_INTERNAL;
-            getContentResolver().takePersistableUriPermission(treeUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-            if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
-                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
-                mountPoint = Volume.MOUNT_EXTERNAL;
-            } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
-                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
-                mountPoint = Volume.MOUNT_USB;
-            }
-            mFileAdapterWrapper = new FileAdapterWrapper(this, R.layout.file_item, rootPath, mountPoint);
-            mFileAdapterWrapper.setOnItemClickListener(this);
-            mFileListView.setAdapter(mFileAdapterWrapper);
-        } else {
-            Toast.makeText(this, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    protected Set<Filer> getSelected() {
-        return mFileAdapterWrapper.getSelected();
-    }
-
-    protected Filer getCurrent() {
-        return mFileAdapterWrapper.getCurrent();
-    }
-
-    protected void refresh() {
-        updateCurrent();
-    }
-
 
     public void updateToParent() {
         if (isLoading) {
@@ -191,14 +158,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                 .map(new Function<Integer, Boolean>() {
                     @Override
                     public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapterWrapper.updateToParent();
+                        mFileAdapter.updateToParent();
                         return true;
                     }
                 }).observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object o) throws Exception {
-                        mFileAdapterWrapper.notifyDataSetChanged();
+                        mFileAdapter.notifyDataSetChanged();
                         UIUtil.cancelLoading();
                         isLoading = false;
                     }
@@ -221,14 +188,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                 .map(new Function<Filer, Boolean>() {
                     @Override
                     public Boolean apply(Filer localFile) throws Exception {
-                        mFileAdapterWrapper.updateToChild(localFile);
+                        mFileAdapter.updateToChild(localFile);
                         return true;
                     }
                 }).observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<Boolean>() {
                     @Override
                     public void accept(Boolean o) throws Exception {
-                        mFileAdapterWrapper.notifyDataSetChanged();
+                        mFileAdapter.notifyDataSetChanged();
                         UIUtil.cancelLoading();
                         isLoading = false;
                     }
@@ -252,41 +219,62 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                 .map(new Function<Integer, Boolean>() {
                     @Override
                     public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapterWrapper.updateCurrent();
+                        mFileAdapter.updateCurrent();
                         return true;
                     }
                 }).observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Consumer<Boolean>() {
                     @Override
                     public void accept(Boolean o) throws Exception {
-                        mFileAdapterWrapper.notifyDataSetChanged();
+                        mFileAdapter.notifyDataSetChanged();
                         UIUtil.cancelLoading();
                         isLoading = false;
                     }
                 }));
     }
 
-    private FileAdapterWrapper initFileAdapter(String rootPath, int mountPoint) {
-        FileAdapterWrapper adapter = new FileAdapterWrapper(this, R.layout.file_item, rootPath, mountPoint);
-        adapter.setOnItemClickListener(this);
-        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
-            @Override
-            public void onHeaderClicked() {
-                updateToParent();
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+        if (resultCode == Activity.RESULT_OK) {
+            Uri treeUri = resultData.getData();
+            if (treeUri == null) {
+                return;
             }
-        });
-        return adapter;
+            getContentResolver().takePersistableUriPermission(treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+            if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+            } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
+            }
+        } else {
+            Toast.makeText(this, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    interface OnFileChooseListener {
+        void onFileSelect(List<Filer> selected);
     }
 
     protected void switchVolume(int mountPoint) {
-        try {
-            String mountPath = StorageUtil.getMountPath(this, mountPoint);
-            mFileAdapterWrapper = initFileAdapter(mountPath, mountPoint);
-            mFileListView.setAdapter(mFileAdapterWrapper);
-            this.mountPoint = mountPoint;
-        } catch (PermException e) {
-            int mountType = e.getMountType();
-            PermissionUtil.requestPermission(this, mountType);
+        mFileAdapter = getFileAdapter(mountPoint);
+        if (mFileAdapter != null) {
+            mFileList.setAdapter(mFileAdapter);
         }
+    }
+
+    protected Set<Filer> getSelected() {
+        return mFileAdapter.getSelected();
+    }
+
+    protected Filer getCurrent() {
+        return mFileAdapter.getCurrent();
+    }
+
+    protected void refresh() {
+        updateCurrent();
     }
 }

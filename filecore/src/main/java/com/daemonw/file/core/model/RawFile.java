@@ -36,7 +36,7 @@ public class RawFile extends Filer {
         String name = new File(fileName).getName();
         File newFile = new File(mFile, name);
         newFile.createNewFile();
-        return new RawFile(mFile);
+        return new RawFile(newFile);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class RawFile extends Filer {
         if (!success) {
             throw new IOException("create directory failed");
         }
-        return new RawFile(mFile);
+        return new RawFile(newFolder);
     }
 
     @Override
@@ -71,12 +71,12 @@ public class RawFile extends Filer {
     }
 
     @Override
-    public OutputStream getOutStream() throws IOException {
+    public FileOutputStream getOutStream() throws IOException {
         return new FileOutputStream(mFile);
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
+    public FileInputStream getInputStream() throws IOException {
         return new FileInputStream(mFile);
     }
 
@@ -125,6 +125,17 @@ public class RawFile extends Filer {
     @Override
     public long length() {
         return mFile.length();
+    }
+
+    @Override
+    public boolean renameTo(String fileName) {
+        String name = new File(fileName).getName();
+        return mFile.renameTo(new File(mFile.getParent(), name));
+    }
+
+    @Override
+    public boolean exists() {
+        return mFile.exists();
     }
 
     @Override

@@ -2,6 +2,8 @@ package com.daemonw.file.core.model;
 
 import com.daemonw.file.core.reflect.Volume;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,9 +33,9 @@ public abstract class Filer {
 
     public abstract String getParentPath();
 
-    public abstract OutputStream getOutStream() throws IOException;
+    public abstract FileOutputStream getOutStream() throws IOException;
 
-    public abstract InputStream getInputStream() throws IOException;
+    public abstract FileInputStream getInputStream() throws IOException;
 
     public abstract boolean isDirectory();
 
@@ -46,6 +48,10 @@ public abstract class Filer {
     public abstract boolean equals(Object o);
 
     public abstract long length();
+
+    public abstract boolean renameTo(String fileName);
+
+    public abstract boolean exists();
 
     public abstract boolean fillWithZero() throws IOException;
 

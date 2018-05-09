@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -23,7 +24,7 @@ import com.daemonw.file.ui.OnFileChooseListener;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;
 import com.daemonw.file.ui.adapter.VolumeAdapter;
 import com.daemonw.file.ui.util.UIUtil;
-import com.daemonw.file.R;
+import com.daemonw.file.ui.R;
 import com.daemonw.file.ui.activity.GrantPermissionActivity;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
@@ -50,15 +51,24 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
     private boolean isLoading = false;
     private VolumeAdapter mVolumeAdapter;
     private FileAdapterWrapper mFileAdapter;
+    private boolean showFile;
 
     public FileChooseDialogInternal(Activity context) {
         super(context);
         mContext = context;
+        showFile = true;
+    }
+
+    public FileChooseDialogInternal(Activity context, boolean showFile) {
+        super(context);
+        mContext = context;
+        this.showFile = showFile;
     }
 
     public FileChooseDialogInternal(Activity context, int theme) {
         super(context, theme);
         mContext = context;
+        showFile = true;
     }
 
     public void setOnFileSelectListener(OnFileChooseListener onFileSelectListener) {
@@ -68,12 +78,12 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.file_choose_dialog);
-        mVolumeList = findViewById(R.id.volume_list);
-        mFileList = findViewById(R.id.file_list);
-        mConfirmButton = findViewById(R.id.confirm);
-        mCancelButton = findViewById(R.id.cancel);
-        mBtnContainer = findViewById(R.id.btn_container);
+        setContentView(R.layout.file_select_dialog);
+        mVolumeList = (RecyclerView) findViewById(R.id.volume_list);
+        mFileList = (RecyclerView) findViewById(R.id.file_list);
+        mConfirmButton = (Button) findViewById(R.id.confirm);
+        mCancelButton = (Button) findViewById(R.id.cancel);
+        mBtnContainer = (RelativeLayout) findViewById(R.id.btn_container);
         init();
     }
 
@@ -124,7 +134,7 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         FileAdapterWrapper adapter = null;
         try {
             String rootPath = StorageUtil.getMountPath(mContext, mountType);
-            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType);
+            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, showFile);
             adapter.setOnItemClickListener(this);
             adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
                 @Override
@@ -187,13 +197,14 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         if (isLoading) {
             return;
         }
+        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
         RxUtil.add(Single.just(1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object obj) throws Exception {
                         isLoading = true;
-                        UIUtil.showLoading(mContext);
+                        UIUtil.showLoading(mContext, loading);
                     }
                 }).observeOn(Schedulers.io())
                 .map(new Function<Integer, Boolean>() {
@@ -207,7 +218,7 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
                     @Override
                     public void accept(Object o) throws Exception {
                         mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading();
+                        UIUtil.cancelLoading(loading);
                         isLoading = false;
                     }
                 }));
@@ -217,13 +228,14 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         if (isLoading) {
             return;
         }
+        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
         RxUtil.add(Single.just(file)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object o) throws Exception {
                         isLoading = true;
-                        UIUtil.showLoading(mContext);
+                        UIUtil.showLoading(mContext, loading);
                     }
                 }).observeOn(Schedulers.io())
                 .map(new Function<Filer, Boolean>() {
@@ -237,7 +249,7 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
                     @Override
                     public void accept(Boolean o) throws Exception {
                         mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading();
+                        UIUtil.cancelLoading(loading);
                         isLoading = false;
                     }
                 }));
@@ -248,13 +260,14 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         if (isLoading) {
             return;
         }
+        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
         RxUtil.add(Single.just(1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object o) throws Exception {
                         isLoading = true;
-                        UIUtil.showLoading(mContext);
+                        UIUtil.showLoading(mContext, loading);
                     }
                 }).observeOn(Schedulers.io())
                 .map(new Function<Integer, Boolean>() {
@@ -268,7 +281,7 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
                     @Override
                     public void accept(Boolean o) throws Exception {
                         mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading();
+                        UIUtil.cancelLoading(loading);
                         isLoading = false;
                     }
                 }));

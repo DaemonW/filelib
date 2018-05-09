@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.daemonw.file.FileConst;
@@ -19,7 +20,7 @@ import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.PermissionUtil;
 import com.daemonw.file.core.utils.RxUtil;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.daemonw.file.R;
+import com.daemonw.file.ui.R;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;
 import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.file.ui.adapter.VolumeAdapter;
@@ -53,8 +54,8 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         mContext = this;
         isShowVolume = true;
         setContentView(R.layout.file_activity);
-        mVolumeList = findViewById(R.id.volume_list);
-        mFileList = findViewById(R.id.file_list);
+        mVolumeList = (RecyclerView) findViewById(R.id.volume_list);
+        mFileList = (RecyclerView) findViewById(R.id.file_list);
         init();
     }
 
@@ -88,7 +89,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         FileAdapterWrapper adapter = null;
         try {
             String rootPath = StorageUtil.getMountPath(mContext, mountType);
-            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType);
+            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, true);
             adapter.setOnItemClickListener(this);
             adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
                 @Override
@@ -163,13 +164,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         if (isLoading) {
             return;
         }
+        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
         RxUtil.add(Single.just(1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object obj) throws Exception {
                         isLoading = true;
-                        UIUtil.showLoading(mContext);
+                        UIUtil.showLoading(mContext, loading);
                     }
                 }).observeOn(Schedulers.io())
                 .map(new Function<Integer, Boolean>() {
@@ -183,7 +185,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                     @Override
                     public void accept(Object o) throws Exception {
                         mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading();
+                        UIUtil.cancelLoading(loading);
                         isLoading = false;
                     }
                 }));
@@ -193,13 +195,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         if (isLoading) {
             return;
         }
+        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
         RxUtil.add(Single.just(file)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object o) throws Exception {
                         isLoading = true;
-                        UIUtil.showLoading(mContext);
+                        UIUtil.showLoading(mContext, loading);
                     }
                 }).observeOn(Schedulers.io())
                 .map(new Function<Filer, Boolean>() {
@@ -213,7 +216,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                     @Override
                     public void accept(Boolean o) throws Exception {
                         mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading();
+                        UIUtil.cancelLoading(loading);
                         isLoading = false;
                     }
                 }));
@@ -224,13 +227,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         if (isLoading) {
             return;
         }
+        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
         RxUtil.add(Single.just(1)
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe(new Consumer<Object>() {
                     @Override
                     public void accept(Object o) throws Exception {
                         isLoading = true;
-                        UIUtil.showLoading(mContext);
+                        UIUtil.showLoading(mContext, loading);
                     }
                 }).observeOn(Schedulers.io())
                 .map(new Function<Integer, Boolean>() {
@@ -244,7 +248,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                     @Override
                     public void accept(Boolean o) throws Exception {
                         mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading();
+                        UIUtil.cancelLoading(loading);
                         isLoading = false;
                     }
                 }));

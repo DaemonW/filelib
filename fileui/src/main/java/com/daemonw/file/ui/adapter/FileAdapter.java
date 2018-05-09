@@ -7,7 +7,7 @@ import android.widget.CompoundButton;
 
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.model.HybirdFile;
-import com.daemonw.file.R;
+import com.daemonw.file.ui.R;
 import com.daemonw.widget.CommonAdapter;
 import com.daemonw.widget.ViewHolder;
 
@@ -27,14 +27,24 @@ class FileAdapter extends CommonAdapter<Filer> {
     private FileComparator mFileComparator = new FileComparator();
     private boolean mMultiSelect;
     private Set<Filer> mSelected = new HashSet<>();
+    private boolean showFile;
 
     private static SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd hh:mm:ss", Locale.getDefault());
 
     public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType) {
         super(context, layoutResId, new ArrayList<Filer>());
+        showFile = true;
         mCurrent = new HybirdFile(context, rootPath, mountType);
         List<Filer> files = mCurrent.listFiles();
-        mDatas.addAll(sortFile(files));
+        addFiles(sortFile(files));
+    }
+
+    public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType, boolean showFile) {
+        super(context, layoutResId, new ArrayList<Filer>());
+        this.showFile = showFile;
+        mCurrent = new HybirdFile(context, rootPath, mountType);
+        List<Filer> files = mCurrent.listFiles();
+        addFiles(sortFile(files));
     }
 
     public void setMultiSelect(boolean enable) {
@@ -78,7 +88,7 @@ class FileAdapter extends CommonAdapter<Filer> {
     public void update(List<Filer> fileList) {
         mDatas.clear();
         mSelected.clear();
-        mDatas.addAll(sortFile(fileList));
+        addFiles(sortFile(fileList));
     }
 
     public void updateToParent() {
@@ -88,7 +98,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         mCurrent = mCurrent.getParentFile();
         mDatas.clear();
         mSelected.clear();
-        mDatas.addAll(sortFile(mCurrent.listFiles()));
+        addFiles(sortFile(mCurrent.listFiles()));
         fileDepth--;
     }
 
@@ -96,14 +106,14 @@ class FileAdapter extends CommonAdapter<Filer> {
         mCurrent = file;
         mSelected.clear();
         mDatas.clear();
-        mDatas.addAll(sortFile(mCurrent.listFiles()));
+        addFiles(sortFile(mCurrent.listFiles()));
         fileDepth++;
     }
 
     public void updateCurrent() {
         mDatas.clear();
         mSelected.clear();
-        mDatas.addAll(sortFile(mCurrent.listFiles()));
+        addFiles(sortFile(mCurrent.listFiles()));
     }
 
     public boolean isRoot() {
@@ -130,11 +140,23 @@ class FileAdapter extends CommonAdapter<Filer> {
         return fileList;
     }
 
+    protected void addFiles(List<Filer> files) {
+        if (files == null || files.size() == 0) {
+            return;
+        }
+        for (Filer file : files) {
+            if (!showFile && !file.isDirectory()) {
+                continue;
+            }
+            mDatas.add(file);
+        }
+    }
+
     class FileComparator implements Comparator<Filer> {
         @Override
         public int compare(Filer f1, Filer f2) {
             if (f1.isDirectory() == f2.isDirectory()) {
-                return f1.getName().compareTo(f2.getName());
+                return f1.getName().toUpperCase().compareTo(f2.getName().toUpperCase());
             }
             return f1.isDirectory() ? -1 : 1;
         }

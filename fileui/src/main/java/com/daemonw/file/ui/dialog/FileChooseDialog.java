@@ -14,22 +14,31 @@ public class FileChooseDialog {
     private Activity mContext;
     private int type;
     private OnFileChooseListener onFileChooseListener;
+    private boolean showFile = true;
 
     public FileChooseDialog(Activity context) {
         mContext = context;
         type = TYPE_RAW;
+        this.showFile = true;
     }
 
-    private FileChooseDialog(Activity context, int type) {
+    public FileChooseDialog(Activity context, boolean showFile) {
+        mContext = context;
+        type = TYPE_RAW;
+        this.showFile = showFile;
+    }
+
+    private FileChooseDialog(Activity context, int type, boolean showFile) {
         mContext = context;
         this.type = type;
+        this.showFile = showFile;
     }
 
 
     public void show() {
         switch (type) {
             case TYPE_RAW:
-                FileChooseDialogInternal dialog = new FileChooseDialogInternal(mContext);
+                FileChooseDialogInternal dialog = new FileChooseDialogInternal(mContext, showFile);
                 dialog.setOnFileSelectListener(onFileChooseListener);
                 dialog.show();
                 break;

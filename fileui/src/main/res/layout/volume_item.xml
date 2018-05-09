@@ -17,6 +17,7 @@
         android:layout_height="match_parent"
         android:gravity="center_vertical"
         android:ellipsize="end"
+        android:textColor="#232323"
         android:singleLine="true"
         android:textSize="18sp" />
 

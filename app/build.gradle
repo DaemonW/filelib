@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion project.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.daemonw.filelib"
-        minSdkVersion 21
-        targetSdkVersion 24
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -24,8 +24,8 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation 'com.android.support:design:27.1.1'
+    implementation 'com.android.support:appcompat-v7:'+ project.ext.supportLibraryVersion
+    implementation 'com.android.support:design:' + project.ext.supportLibraryVersion
     implementation 'com.android.support:multidex:1.0.3'
     implementation 'com.orhanobut:logger:2.2.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'

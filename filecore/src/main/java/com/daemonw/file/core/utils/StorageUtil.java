@@ -82,24 +82,25 @@ public class StorageUtil {
             if (!StorageUtil.hasWritePermission(context, v.mountType)) {
                 throw new PermException(getPermMessage(v.mountType), v.mountType);
             }
-            if (v.mountType == Volume.MOUNT_EXTERNAL) {
-                rootPath = v.mPath;
-                if (!new File(rootPath).canRead()) {
-                    rootPath = sp.getString(FileConst.PREF_EXTERNAL_URI, null);
-                }
-            } else if (v.mountType == Volume.MOUNT_USB) {
-                rootPath = v.mPath;
-                if (!new File(rootPath).canRead()) {
-                    rootPath = sp.getString(FileConst.PREF_USB_URI, null);
-                }
-            } else {
-                rootPath = v.mPath;
-            }
+//            if (v.mountType == Volume.MOUNT_EXTERNAL) {
+//                rootPath = v.mPath;
+//                if (!new File(rootPath).canRead()) {
+//                    rootPath = sp.getString(FileConst.PREF_EXTERNAL_URI, null);
+//                }
+//            } else if (v.mountType == Volume.MOUNT_USB) {
+//                rootPath = v.mPath;
+//                if (!new File(rootPath).canRead()) {
+//                    rootPath = sp.getString(FileConst.PREF_USB_URI, null);
+//                }
+//            } else {
+//                rootPath = v.mPath;
+//            }
+            rootPath = v.mPath;
         }
         return rootPath;
     }
 
-    public static String getMountUri(Activity context, int mountType) {
+    public static String getMountUri(Context context, int mountType) {
         String uri = null;
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         switch (mountType) {

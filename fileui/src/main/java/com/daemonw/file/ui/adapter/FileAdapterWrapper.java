@@ -11,7 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.daemonw.file.core.model.Filer;
-import com.daemonw.file.R;
+import com.daemonw.file.ui.R;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 import com.daemonw.widget.WrapperUtils;
@@ -29,9 +29,9 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     private OnHeadClickListener mHeadClickListener;
 
 
-    public FileAdapterWrapper(Activity context, int layoutResId, String rootPath, int mountType) {
+    public FileAdapterWrapper(Activity context, int layoutResId, String rootPath, int mountType, boolean showFile) {
         mContext = context;
-        mInnerAdapter = new FileAdapter(context, layoutResId, rootPath, mountType);
+        mInnerAdapter = new FileAdapter(context, layoutResId, rootPath, mountType, showFile);
         addHeaderView(getHeaderView(context), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -190,6 +190,8 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
         icon.setImageResource(R.drawable.ic_folder);
         TextView name = v.findViewById(R.id.file_name);
         name.setText("...");
+        ViewGroup.LayoutParams lp=new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        v.setLayoutParams(lp);
         return v;
     }
 

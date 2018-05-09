@@ -9,4 +9,8 @@ public class RxUtil {
     public static void add(Disposable disposable) {
         mDisposable.add(disposable);
     }
+
+    public static void dispose() {
+        mDisposable.dispose();
+    }
 }

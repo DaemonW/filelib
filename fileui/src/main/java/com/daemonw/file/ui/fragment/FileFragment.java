@@ -1,4 +1,4 @@
-package com.daemonw.file.ui.activity;
+package com.daemonw.file.ui.fragment;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -6,33 +6,32 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.daemonw.file.FileConst;
+import com.daemonw.file.ui.R;
 import com.daemonw.file.core.exception.PermException;
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.PermissionUtil;
 import com.daemonw.file.core.utils.RxUtil;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.daemonw.file.ui.R;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;
-import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.file.ui.adapter.VolumeAdapter;
+import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -42,92 +41,60 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public class FileChooseActivity extends AppCompatActivity implements MultiItemTypeAdapter.OnItemClickListener {
+public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnItemClickListener, View.OnKeyListener {
 
-    private Activity mContext;
+    protected Activity mContext;
     private RecyclerView mVolumeList;
     private RecyclerView mFileList;
-    private Button mConfirmButton;
-    private Button mCancelButton;
-    private RelativeLayout mBtnContainer;
-    private OnFileChooseListener mOnFileSelectListener;
     private boolean isLoading = false;
+    private boolean isFirstVisible = true;
+    protected boolean isShowVolume;
     private VolumeAdapter mVolumeAdapter;
     private FileAdapterWrapper mFileAdapter;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mContext = this;
-        setContentView(R.layout.file_select_dialog);
-        mVolumeList = (RecyclerView) findViewById(R.id.volume_list);
-        mFileList = (RecyclerView) findViewById(R.id.file_list);
-        mConfirmButton = (Button) findViewById(R.id.confirm);
-        mCancelButton = (Button) findViewById(R.id.cancel);
-        mBtnContainer = (RelativeLayout) findViewById(R.id.btn_container);
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.file_fragment, null);
+        return v;
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        mContext = getActivity();
+        isShowVolume = true;
+        mVolumeList = (RecyclerView) view.findViewById(R.id.volume_list);
+        mFileList = (RecyclerView) view.findViewById(R.id.file_list);
+        mFileList.setOnKeyListener(this);
         init();
-        fixSize();
     }
 
-    private void init() {
-        final List<Volume> volumes = StorageUtil.getVolumes(mContext);
-        mVolumeAdapter = new VolumeAdapter(mContext, R.layout.volume_item, volumes);
-        mVolumeAdapter.setOnItemClickListener(new MultiItemTypeAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(View view, ViewHolder holder, int position) {
-                Volume v = volumes.get(position);
-                mFileAdapter = getFileAdapter(v.mountType);
-                if (mFileAdapter != null) {
-                    mVolumeList.setVisibility(View.GONE);
-                    mFileList.setLayoutManager(new LinearLayoutManager(mContext));
-                    mFileList.setAdapter(mFileAdapter);
-                    mFileList.setVisibility(View.VISIBLE);
-                    mBtnContainer.setVisibility(View.VISIBLE);
-                }
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+        if (resultCode == Activity.RESULT_OK) {
+            Uri treeUri = resultData.getData();
+            if (treeUri == null) {
+                return;
             }
 
-            @Override
-            public boolean onItemLongClick(View view, ViewHolder holder, int position) {
-                return false;
+            getActivity().getContentResolver().takePersistableUriPermission(treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
+            if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+            } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
             }
-        });
-        mVolumeList.setLayoutManager(new LinearLayoutManager(mContext));
-        mVolumeList.setAdapter(mVolumeAdapter);
-        mCancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-        mConfirmButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-                if (mOnFileSelectListener != null) {
-                    Set<Filer> selected = mFileAdapter.getSelected();
-                    ArrayList<Filer> selectedFiles = new ArrayList<>(selected);
-                    mOnFileSelectListener.onFileSelect(selectedFiles);
-                }
-            }
-        });
-    }
-
-    private FileAdapterWrapper getFileAdapter(int mountType) {
-        FileAdapterWrapper adapter = null;
-        try {
-            String rootPath = StorageUtil.getMountPath(mContext, mountType);
-            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, false);
-            adapter.setOnItemClickListener(this);
-            adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
-                @Override
-                public void onHeaderClicked() {
-                    updateToParent();
-                }
-            });
-        } catch (PermException e) {
-            PermissionUtil.requestPermission(mContext, ((PermException) e).getMountType());
+        } else {
+            Toast.makeText(mContext, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
         }
-        return adapter;
     }
 
     @Override
@@ -143,7 +110,9 @@ public class FileChooseActivity extends AppCompatActivity implements MultiItemTy
                 Toast.makeText(mContext, R.string.tip_choose_file, Toast.LENGTH_SHORT).show();
             }
         }
+        onFolderChanged();
     }
+
 
     @Override
     public boolean onItemLongClick(View view, ViewHolder holder, int position) {
@@ -155,18 +124,136 @@ public class FileChooseActivity extends AppCompatActivity implements MultiItemTy
         return false;
     }
 
-    public void fixSize() {
-        WindowManager.LayoutParams wp = getWindow().getAttributes();
-        if (wp == null) {
-            return;
+
+    @Override
+    public boolean onKey(View v, int keyCode, KeyEvent event) {
+        boolean handled = false;
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (isLoading) {
+                return true;
+            }
+            if (mFileAdapter != null) {
+
+                if (mFileAdapter.isMultiSelect()) {
+                    mFileAdapter.setMultiSelect(false);
+                    mFileAdapter.notifyDataSetChanged();
+                    return true;
+                }
+
+                if (!mFileAdapter.isRoot()) {
+                    updateToParent();
+                    onFolderChanged();
+                    return true;
+                }
+
+                if (isShowVolume) {
+                    return false;
+                } else {
+                    showVolumeList();
+                    onFolderChanged();
+                }
+
+                return true;
+            }
         }
-        DisplayMetrics dm = new DisplayMetrics();
-        mContext.getWindowManager().getDefaultDisplay().getMetrics(dm);
-        wp.width = (int) (dm.widthPixels * 0.9);
-        getWindow().setAttributes(wp);
-        ViewGroup.LayoutParams fp = mFileList.getLayoutParams();
-        fp.height = (int) (dm.heightPixels * 0.6);
-        mFileList.setLayoutParams(fp);
+        return handled;
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (isFirstVisible) {
+            isFirstVisible = false;
+            onFirstVisible();
+        }
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            onVisible();
+        } else {
+            onInvisible();
+        }
+    }
+
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if (isVisibleToUser) {
+            onVisible();
+        } else {
+            onInvisible();
+        }
+    }
+
+    protected void onVisible() {
+        mVolumeAdapter.refresh();
+    }
+
+    protected void onInvisible() {
+
+    }
+
+    protected void onFirstVisible() {
+
+    }
+
+
+    private void init() {
+        final List<Volume> volumes = StorageUtil.getVolumes(mContext);
+        mVolumeAdapter = new VolumeAdapter(mContext, R.layout.volume_item, volumes);
+        mVolumeAdapter.setOnItemClickListener(new MultiItemTypeAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View view, ViewHolder holder, int position) {
+                Volume v = volumes.get(position);
+                mFileAdapter = getFileAdapter(v.mountType);
+                if (mFileAdapter != null) {
+                    isShowVolume = false;
+                    mVolumeList.setVisibility(View.GONE);
+                    mFileList.setLayoutManager(new LinearLayoutManager(mContext));
+                    mFileList.setAdapter(mFileAdapter);
+                    mFileList.setVisibility(View.VISIBLE);
+                }
+                onFolderChanged();
+            }
+
+            @Override
+            public boolean onItemLongClick(View view, ViewHolder holder, int position) {
+                return false;
+            }
+        });
+        mVolumeList.setLayoutManager(new LinearLayoutManager(mContext));
+        mVolumeList.setAdapter(mVolumeAdapter);
+    }
+
+    private FileAdapterWrapper getFileAdapter(int mountType) {
+        FileAdapterWrapper adapter = null;
+        try {
+            String rootPath = StorageUtil.getMountPath(mContext, mountType);
+            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, true);
+            adapter.setOnItemClickListener(this);
+            adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+                @Override
+                public void onHeaderClicked() {
+                    updateToParent();
+                    onFolderChanged();
+                }
+            });
+        } catch (PermException e) {
+            PermissionUtil.requestPermission(mContext, ((PermException) e).getMountType());
+        }
+        return adapter;
+    }
+
+
+    public void showVolumeList() {
+        isShowVolume = true;
+        mFileList.setVisibility(View.GONE);
+        mVolumeAdapter.refresh();
+        mVolumeList.setVisibility(View.VISIBLE);
     }
 
     public void updateToParent() {
@@ -264,28 +351,23 @@ public class FileChooseActivity extends AppCompatActivity implements MultiItemTy
     }
 
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
-        if (resultCode == Activity.RESULT_OK) {
-            Uri treeUri = resultData.getData();
-            if (treeUri == null) {
-                return;
-            }
-            getContentResolver().takePersistableUriPermission(treeUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-            if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
-                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
-            } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
-                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
-            }
-        } else {
-            Toast.makeText(this, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
-        }
+    protected void onFolderChanged() {
+
     }
 
-    interface OnFileChooseListener {
-        void onFileSelect(List<Filer> selected);
+    protected Set<Filer> getSelected() {
+        return mFileAdapter.getSelected();
+    }
+
+    protected Filer getCurrent() {
+        return mFileAdapter.getCurrent();
+    }
+
+    protected void disableSelectMode() {
+        mFileAdapter.setMultiSelect(false);
+    }
+
+    protected void refresh() {
+        updateCurrent();
     }
 }

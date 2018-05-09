@@ -1,60 +1,51 @@
 package com.daemonw.file.core.model;
 
-import android.app.Activity;
-import android.net.Uri;
+import android.content.Context;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.provider.DocumentFile;
 
+import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.MimeTypes;
 import com.daemonw.file.core.utils.RawFileUtil;
 import com.daemonw.file.core.utils.StorageUtil;
+import com.orhanobut.logger.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.List;
 
 public class UsbFile extends Filer {
-
     public static final String EXTERNAL_STORAGE_URI = "content://com.android.externalstorage.documents/tree/";
 
     private File mRawFile;
     private DocumentFile mSafFile;
-    private boolean isRawPath;
-    private Activity mContext;
+    private Context mContext;
 
-    public UsbFile(Activity context, String filePath) {
+    public UsbFile(Context context, String filePath) {
         mContext = context;
         mPath = filePath;
+        mRawFile = new File(filePath);
         mType = TYPE_USB;
-        if (isContentUri(filePath)) {
-            Uri uri = Uri.parse(filePath);
-            mSafFile = DocumentFile.fromTreeUri(context, uri);
-            isRawPath = false;
-        } else {
-            mRawFile = new File(filePath);
-            isRawPath = true;
-        }
     }
 
-    private UsbFile(Activity context, File file) {
+    public UsbFile(Context context, File file) {
         mContext = context;
         mPath = file.getAbsolutePath();
-        mType = TYPE_USB;
         mRawFile = file;
-        isRawPath = true;
+        mType = TYPE_USB;
     }
 
-    private UsbFile(Activity context, DocumentFile file) {
+    private UsbFile(Context context, String filePath, DocumentFile file) {
         mContext = context;
-        mPath = file.getUri().toString();
-        mType = TYPE_USB;
+        mType = TYPE_EXTERNAL;
+        mRawFile = new File(filePath);
+        mPath = mRawFile.getAbsolutePath();
         mSafFile = file;
-        isRawPath = false;
+        mType = TYPE_USB;
     }
 
     @Override
@@ -62,7 +53,11 @@ public class UsbFile extends Filer {
         if (canRawWrite()) {
             return mRawFile.delete();
         }
+
         DocumentFile file = getDocumentFile();
+        if (file == null) {
+            return false;
+        }
         return file.delete();
     }
 
@@ -75,11 +70,14 @@ public class UsbFile extends Filer {
             return new UsbFile(mContext, newRawFile);
         }
         DocumentFile file = getDocumentFile();
+        if (file == null) {
+            return null;
+        }
         DocumentFile newSafFile = file.createFile(MimeTypes.getMimeType(name), name);
         if (newSafFile == null) {
             return null;
         }
-        return new UsbFile(mContext, newSafFile);
+        return new UsbFile(mContext, mPath + "/" + name, newSafFile);
     }
 
     @Override
@@ -94,19 +92,19 @@ public class UsbFile extends Filer {
             return new UsbFile(mContext, newFolder);
         }
         DocumentFile file = getDocumentFile();
+        if (file == null) {
+            return null;
+        }
         DocumentFile newSafFolder = file.createDirectory(name);
         if (newSafFolder == null) {
             return null;
         }
-        return new UsbFile(mContext, newSafFolder);
+        return new UsbFile(mContext, mPath + "/" + name, newSafFolder);
     }
 
     @Override
     public String getName() {
-        if (isRawPath) {
-            return mRawFile.getName();
-        }
-        return mSafFile.getName();
+        return mRawFile.getName();
     }
 
     @Override
@@ -120,7 +118,11 @@ public class UsbFile extends Filer {
             return new UsbFile(mContext, mRawFile.getParentFile());
         }
         DocumentFile file = getDocumentFile();
-        return new UsbFile(mContext, file.getParentFile());
+        if (file == null) {
+            return null;
+        }
+        DocumentFile parent = file.getParentFile();
+        return new UsbFile(mContext, new File(mPath).getParent(), parent);
     }
 
     @Override
@@ -129,21 +131,27 @@ public class UsbFile extends Filer {
     }
 
     @Override
-    public OutputStream getOutStream() throws IOException {
+    public FileOutputStream getOutStream() throws IOException {
         if (canRawWrite()) {
             return new FileOutputStream(mRawFile);
         }
         DocumentFile file = getDocumentFile();
-        return mContext.getContentResolver().openOutputStream(file.getUri());
+        if (file == null) {
+            return null;
+        }
+        return (FileOutputStream) mContext.getContentResolver().openOutputStream(file.getUri());
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
+    public FileInputStream getInputStream() throws IOException {
         if (canRawRead()) {
             return new FileInputStream(mRawFile);
         }
         DocumentFile file = getDocumentFile();
-        return mContext.getContentResolver().openInputStream(file.getUri());
+        if (file == null) {
+            return null;
+        }
+        return  (FileInputStream)mContext.getContentResolver().openInputStream(file.getUri());
     }
 
     @Override
@@ -168,12 +176,15 @@ public class UsbFile extends Filer {
             }
         } else {
             DocumentFile file = getDocumentFile();
+            if (file == null) {
+                return subFiles;
+            }
             DocumentFile[] subSaf = file.listFiles();
             if (subSaf == null || subSaf.length <= 0) {
                 return subFiles;
             }
             for (DocumentFile f : subSaf) {
-                subFiles.add(new UsbFile(mContext, f));
+                subFiles.add(new UsbFile(mContext, mPath + "/" + f.getName(), f));
             }
         }
         return subFiles;
@@ -223,27 +234,52 @@ public class UsbFile extends Filer {
     }
 
     @Override
+    public boolean renameTo(String fileName) {
+        String name = new File(fileName).getName();
+        if (canRawWrite()) {
+            return mRawFile.renameTo(new File(mRawFile.getParent(), name));
+        }
+        DocumentFile file = getDocumentFile();
+        return file.renameTo(name);
+    }
+
+    @Override
+    public boolean exists() {
+        if (canRawRead()) {
+            return mRawFile.exists();
+        }
+        DocumentFile file = getDocumentFile();
+        if (file == null) {
+            return false;
+        }
+        return file.exists();
+    }
+
+    @Override
     public boolean fillWithZero() throws IOException {
         if (canRawWrite()) {
             RandomAccessFile raf = new RandomAccessFile(mPath, "rw");
             return RawFileUtil.fillWithZero(raf);
         } else {
             DocumentFile file = getDocumentFile();
-            ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(mSafFile.getUri(), "rw");
+            if (file == null) {
+                return false;
+            }
+            ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(file.getUri(), "rw");
             return RawFileUtil.fillWithZero(pfd, length());
         }
     }
 
-
     public boolean canRawWrite() {
-        return isRawPath && mRawFile.canWrite();
+        return mRawFile.canWrite();
     }
 
     public boolean canRawRead() {
-        boolean canRead = isRawPath && mRawFile.canRead();
+        boolean canRead = mRawFile.canRead();
         if (canRead) {
             return true;
         }
+
         //特殊文件,不可读写
         if (getName().equals(".android_secure")) {
             return true;
@@ -278,14 +314,21 @@ public class UsbFile extends Filer {
             return mSafFile;
         }
         DocumentFile file = null;
-        try {
-            String rootPath = StorageUtil.getMountPath(mContext, mType);
-            String rootUri = StorageUtil.getMountUri(mContext, mType);
-            file = StorageUtil.findDocumentFile(mContext, mPath, rootPath, rootUri);
-            mSafFile = file;
-        } catch (IOException e) {
-            e.printStackTrace();
+        Volume volume = null;
+        List<Volume> volumes = StorageUtil.getVolumes(mContext);
+        for (Volume v : volumes) {
+            if (mPath.startsWith(v.mPath)) {
+                volume = v;
+                break;
+            }
         }
+        if (volume == null) {
+            Logger.e("can't found document file from path " + mPath);
+            return null;
+        }
+        String rootUri = StorageUtil.getMountUri(mContext, volume.mountType);
+        file = StorageUtil.findDocumentFile(mContext, mPath, volume.mPath, rootUri);
+        mSafFile = file;
         return file;
     }
 }

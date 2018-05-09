@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.daemonw.file">
+    package="com.daemonw.file.core">
 
     <uses-feature
         android:name="android.hardware.usb.host"

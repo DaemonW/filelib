@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.PopupWindow;
 
-import com.daemonw.file.R;
+import com.daemonw.file.ui.R;
 
 
 public class UIUtil {
@@ -25,17 +25,15 @@ public class UIUtil {
         return popUp;
     }
 
-    public static void showLoading(Activity context) {
-        if (mPopupLoading == null) {
-            mPopupLoading = getPopupLoading(context);
+    public static void showLoading(Activity context, PopupWindow loading) {
+        if (loading != null) {
+            loading.showAtLocation(context.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
         }
-        mPopupLoading.showAtLocation(context.getWindow().getDecorView(), Gravity.CENTER, 0, 0);
-
     }
 
-    public static void cancelLoading() {
-        if (mPopupLoading != null && mPopupLoading.isShowing()) {
-            mPopupLoading.dismiss();
+    public static void cancelLoading(PopupWindow loading) {
+        if (loading != null && loading.isShowing()) {
+            loading.dismiss();
         }
     }
 }

@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.daemonw.file">
+    package="com.daemonw.file.ui">
 
     <application>
         <activity android:name="com.daemonw.file.ui.activity.FileActivity" />

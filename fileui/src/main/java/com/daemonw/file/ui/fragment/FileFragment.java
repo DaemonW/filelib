@@ -47,7 +47,7 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
     private RecyclerView mVolumeList;
     private RecyclerView mFileList;
     private boolean isLoading = false;
-    private boolean isFirstVisible = true;
+    private boolean isVisible = false;
     protected boolean isShowVolume;
     private VolumeAdapter mVolumeAdapter;
     private FileAdapterWrapper mFileAdapter;
@@ -129,6 +129,9 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
     public boolean onKey(View v, int keyCode, KeyEvent event) {
         boolean handled = false;
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (!isVisible) {
+                return false;
+            }
             if (isLoading) {
                 return true;
             }
@@ -163,10 +166,6 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
     @Override
     public void onResume() {
         super.onResume();
-        if (isFirstVisible) {
-            isFirstVisible = false;
-            onFirstVisible();
-        }
     }
 
     @Override
@@ -190,15 +189,12 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
     }
 
     protected void onVisible() {
+        isVisible = true;
         mVolumeAdapter.refresh();
     }
 
     protected void onInvisible() {
-
-    }
-
-    protected void onFirstVisible() {
-
+        isVisible = false;
     }
 
 

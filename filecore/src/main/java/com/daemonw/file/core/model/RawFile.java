@@ -1,5 +1,7 @@
 package com.daemonw.file.core.model;
 
+import android.net.Uri;
+
 import com.daemonw.file.core.utils.RawFileUtil;
 
 import java.io.File;
@@ -58,6 +60,11 @@ public class RawFile extends Filer {
     @Override
     public String getPath() {
         return mPath;
+    }
+
+    @Override
+    public String getUri() {
+        return Uri.fromFile(mFile).toString();
     }
 
     @Override

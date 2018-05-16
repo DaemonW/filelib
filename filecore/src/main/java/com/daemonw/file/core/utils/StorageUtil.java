@@ -38,7 +38,7 @@ public class StorageUtil {
         return volumes;
     }
 
-    public static Volume getVolume(Context context, int mountType) {
+    public static Volume getMountVolume(Activity context, int mountType) {
         List<Volume> volumes = getVolumes(context);
         for (Volume v : volumes) {
             if (v.mountType == mountType) {
@@ -73,7 +73,6 @@ public class StorageUtil {
 
     public static String getMountPath(Activity context, int mountPoint) throws PermException {
         List<Volume> volumes = StorageUtil.getVolumes(context);
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String rootPath = null;
         for (Volume v : volumes) {
             if (v.mountType != mountPoint) {
@@ -82,19 +81,6 @@ public class StorageUtil {
             if (!StorageUtil.hasWritePermission(context, v.mountType)) {
                 throw new PermException(getPermMessage(v.mountType), v.mountType);
             }
-//            if (v.mountType == Volume.MOUNT_EXTERNAL) {
-//                rootPath = v.mPath;
-//                if (!new File(rootPath).canRead()) {
-//                    rootPath = sp.getString(FileConst.PREF_EXTERNAL_URI, null);
-//                }
-//            } else if (v.mountType == Volume.MOUNT_USB) {
-//                rootPath = v.mPath;
-//                if (!new File(rootPath).canRead()) {
-//                    rootPath = sp.getString(FileConst.PREF_USB_URI, null);
-//                }
-//            } else {
-//                rootPath = v.mPath;
-//            }
             rootPath = v.mPath;
         }
         return rootPath;
@@ -156,6 +142,17 @@ public class StorageUtil {
         }
         return file;
     }
+
+//    public static Uri getDocumentFileUri(Context context, String filePath, String rootPath, String rootUri){
+//        if(filePath.equals(rootPath)){
+//            return Uri.parse(rootUri);
+//        }
+//        StringBuilder sb=new StringBuilder(rootUri);
+//        if(!rootPath.endsWith(File.separator)){
+//            sb.append(File.separator).append("doc").append(File.separator);
+//        }
+//        filePath=filePath.substring()
+//    }
 
     public static boolean hasWritePermission(Activity context, int mountType) {
         if (mountType == Volume.MOUNT_INTERNAL) {

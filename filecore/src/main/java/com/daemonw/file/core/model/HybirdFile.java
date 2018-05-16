@@ -80,6 +80,11 @@ public class HybirdFile extends Filer {
     }
 
     @Override
+    public String getUri() {
+        return fileDelegate.getUri();
+    }
+
+    @Override
     public Filer getParentFile() {
         if (fileDelegate == null) {
             return null;

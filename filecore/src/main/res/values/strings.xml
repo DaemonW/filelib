@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">filelibyary</string>
     <string name="request_write_storage_perm">Please let this app access your storage to copy files from USB</string>
     <string name="permission_granted">Permission granted. Please try again now.</string>
     <string name="permission_denied">Permission denied. Cannot copy from USB.</string>
+    <string name="tip_select_volume">Select volume \'%1$s\' to grant write permission.</string>
+    <string name="tip_select_volume_err">Can not find mounted volume.</string>
 </resources>

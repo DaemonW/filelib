@@ -1,6 +1,7 @@
 package com.daemonw.file.core.model;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.provider.DocumentFile;
 
@@ -14,8 +15,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,6 +111,18 @@ public class ExternalFile extends Filer {
     @Override
     public String getPath() {
         return mPath;
+    }
+
+    @Override
+    public String getUri() {
+        if (canRawRead()) {
+            return Uri.fromFile(mRawFile).toString();
+        }
+        DocumentFile f = getDocumentFile();
+        if (f == null) {
+            return null;
+        }
+        return f.getUri().toString();
     }
 
     @Override

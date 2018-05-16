@@ -29,6 +29,8 @@ public abstract class Filer {
 
     public abstract String getPath();
 
+    public abstract String getUri();
+
     public abstract Filer getParentFile();
 
     public abstract String getParentPath();

@@ -1,6 +1,7 @@
 package com.daemonw.file.core.model;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.provider.DocumentFile;
 
@@ -113,6 +114,18 @@ public class UsbFile extends Filer {
     }
 
     @Override
+    public String getUri() {
+        if (canRawRead()) {
+            return Uri.fromFile(mRawFile).toString();
+        }
+        DocumentFile f = getDocumentFile();
+        if (f == null) {
+            return null;
+        }
+        return f.getUri().toString();
+    }
+
+    @Override
     public Filer getParentFile() {
         if (canRawRead()) {
             return new UsbFile(mContext, mRawFile.getParentFile());
@@ -151,7 +164,7 @@ public class UsbFile extends Filer {
         if (file == null) {
             return null;
         }
-        return  (FileInputStream)mContext.getContentResolver().openInputStream(file.getUri());
+        return (FileInputStream) mContext.getContentResolver().openInputStream(file.getUri());
     }
 
     @Override
@@ -240,6 +253,9 @@ public class UsbFile extends Filer {
             return mRawFile.renameTo(new File(mRawFile.getParent(), name));
         }
         DocumentFile file = getDocumentFile();
+        if (file == null) {
+            return false;
+        }
         return file.renameTo(name);
     }
 

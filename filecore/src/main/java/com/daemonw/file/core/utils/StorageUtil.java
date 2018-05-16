@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
@@ -71,7 +72,7 @@ public class StorageUtil {
     }
 
 
-    public static String getMountPath(Activity context, int mountPoint) throws PermException {
+    public static String getMountPath(Context context, int mountPoint) throws PermException {
         List<Volume> volumes = StorageUtil.getVolumes(context);
         String rootPath = null;
         for (Volume v : volumes) {
@@ -143,18 +144,7 @@ public class StorageUtil {
         return file;
     }
 
-//    public static Uri getDocumentFileUri(Context context, String filePath, String rootPath, String rootUri){
-//        if(filePath.equals(rootPath)){
-//            return Uri.parse(rootUri);
-//        }
-//        StringBuilder sb=new StringBuilder(rootUri);
-//        if(!rootPath.endsWith(File.separator)){
-//            sb.append(File.separator).append("doc").append(File.separator);
-//        }
-//        filePath=filePath.substring()
-//    }
-
-    public static boolean hasWritePermission(Activity context, int mountType) {
+    public static boolean hasWritePermission(Context context, int mountType) {
         if (mountType == Volume.MOUNT_INTERNAL) {
             return true;
         }
@@ -191,7 +181,7 @@ public class StorageUtil {
         return false;
     }
 
-    private static boolean isPersistedUri(Activity context, String uri) {
+    private static boolean isPersistedUri(Context context, String uri) {
         boolean isPersisted = false;
         List<UriPermission> perms = context.getContentResolver().getPersistedUriPermissions();
         for (UriPermission p : perms) {

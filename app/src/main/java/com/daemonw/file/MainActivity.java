@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
         }
 //        Intent intent = new Intent(MainActivity.this, FileManagerActivity.class);
 //        MainActivity.this.startActivity(intent);
-        Volume v = StorageUtil.getVolume(this, Volume.MOUNT_EXTERNAL);
+        Volume v = StorageUtil.getMountVolume(this, Volume.MOUNT_EXTERNAL);
         if (v == null) {
             return;
         }

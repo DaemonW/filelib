@@ -3,8 +3,8 @@ package com.daemonw.file;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ContentUris;
-import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -15,8 +15,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
 
-import com.daemonw.file.core.reflect.Volume;
-import com.daemonw.file.core.utils.StorageUtil;
 import com.daemonw.file.ui.dialog.FileChooseDialog;
 
 public class MainActivity extends AppCompatActivity {
@@ -57,15 +55,6 @@ public class MainActivity extends AppCompatActivity {
         if (!isGrantExternalRW(this)) {
             return;
         }
-//        Intent intent = new Intent(MainActivity.this, FileManagerActivity.class);
-//        MainActivity.this.startActivity(intent);
-        Volume v = StorageUtil.getMountVolume(this, Volume.MOUNT_EXTERNAL);
-        if (v == null) {
-            return;
-        }
-        String filePath = v.mPath + "/encrypt.flv";
-        Uri uri = pathToMediaUri(v.mPath, filePath);
-        textView.append(uri.toString() + "\n");
 
     }
 

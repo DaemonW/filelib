@@ -32,7 +32,7 @@ public class SdcardMountReceiver extends BroadcastReceiver {
                     if (isUSBMounted) {
                         sp.edit().putString(FileConst.PREF_EXTERNAL_PATH, path).apply();
                     }
-                    Logger.d("Media Device Name = " + path);
+                    Logger.d("Media Mounted, Name = " + path);
                 }
                 break;
             case Intent.ACTION_MEDIA_MOUNTED:
@@ -41,7 +41,7 @@ public class SdcardMountReceiver extends BroadcastReceiver {
                     if (!isUSBMounted) {
                         sp.edit().putString(FileConst.PREF_EXTERNAL_PATH, path).apply();
                     }
-                    Logger.d("Media Device Name = " + path);
+                    Logger.d("Media Unmounted, Name = " + path);
                 }
                 break;
             case Intent.ACTION_MEDIA_REMOVED:

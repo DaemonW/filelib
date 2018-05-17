@@ -14,10 +14,6 @@ public class FileConst {
 
     public static final String PREF_USB_URI = "pref_usb_uri";
 
-    public static final String PREF_USB_path = "pref_usb_path";
-
-    public static final String PREF_USB_DEVICE_NAME = "pref_usb_device_name";
-
     public static final String PREF_USB_MOUNTED = "pref_usb_mounted";
 
 

@@ -26,7 +26,7 @@ public class StorageUtil {
 
     public static List<Volume> getVolumes(Context context) {
         StorageManager storageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
-        List<StorageVolume> volumeList = getVolumeList(storageManager);
+        List<StorageVolume> volumeList = getStorageVolumeList(storageManager);
         List<Volume> volumes = new ArrayList<>();
         for (StorageVolume v : volumeList) {
             Volume vol = Volume.fromStorageVolume(context, v);
@@ -48,7 +48,7 @@ public class StorageUtil {
     }
 
 
-    private static List<StorageVolume> getVolumeList(StorageManager storageManager) {
+    private static List<StorageVolume> getStorageVolumeList(StorageManager storageManager) {
         List<StorageVolume> volumeList = new ArrayList<>();
         try {
             if (BuildUtils.thanNougat()) {
@@ -146,7 +146,6 @@ public class StorageUtil {
         if (mountType == Volume.MOUNT_INTERNAL) {
             return true;
         }
-
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String mediaPath = null;
         if (mountType == Volume.MOUNT_EXTERNAL) {
@@ -157,24 +156,12 @@ public class StorageUtil {
         if (mediaPath == null) {
             return false;
         }
-
         if (!isPersistedUri(context, mediaPath)) {
             return false;
         }
-
         DocumentFile file = DocumentFile.fromTreeUri(context, Uri.parse(mediaPath));
-        if (file.canWrite()) {
+        if (file.exists() && file.canWrite()) {
             return true;
-        }
-        try {
-            DocumentFile subFile = file.createFile(MimeTypes.getMimeType(FileConst.DUMB_FILE), FileConst.DUMB_FILE);
-            if (subFile == null) {
-                return false;
-            }
-            subFile.delete();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return false;
     }

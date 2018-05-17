@@ -1,6 +1,5 @@
 package com.daemonw.file.core.utils;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.UriPermission;
@@ -9,7 +8,6 @@ import android.os.Environment;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
-import android.provider.DocumentsContract;
 import android.support.v4.provider.DocumentFile;
 import android.util.Log;
 
@@ -17,7 +15,6 @@ import com.daemonw.file.FileConst;
 import com.daemonw.file.core.exception.PermException;
 import com.daemonw.file.core.reflect.Volume;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +22,7 @@ import java.util.List;
 
 public class StorageUtil {
     private final static String LOG_TAG = StorageUtil.class.getSimpleName();
+    private final static String METHOD_GET_VOLUME = "getVolumeList";
 
     public static List<Volume> getVolumes(Context context) {
         StorageManager storageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
@@ -39,7 +37,7 @@ public class StorageUtil {
         return volumes;
     }
 
-    public static Volume getMountVolume(Activity context, int mountType) {
+    public static Volume getMountVolume(Context context, int mountType) {
         List<Volume> volumes = getVolumes(context);
         for (Volume v : volumes) {
             if (v.mountType == mountType) {
@@ -55,8 +53,8 @@ public class StorageUtil {
         try {
             if (BuildUtils.thanNougat()) {
                 volumeList = storageManager.getStorageVolumes();
-            } else if (BuildUtils.thanLollipop()) {
-                Method method = StorageManager.class.getMethod("getVolumeList");
+            } else if (BuildUtils.thanKitkat()) {
+                Method method = StorageManager.class.getMethod(METHOD_GET_VOLUME);
                 StorageVolume[] result = (StorageVolume[]) method.invoke(storageManager);
                 if (result != null && result.length > 0) {
                     Collections.addAll(volumeList, result);

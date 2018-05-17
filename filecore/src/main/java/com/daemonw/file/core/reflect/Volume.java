@@ -2,6 +2,7 @@ package com.daemonw.file.core.reflect;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
@@ -16,6 +17,9 @@ import java.lang.reflect.Method;
 
 public class Volume {
     public static final String LOG_TAG = Volume.class.getSimpleName();
+    private static String INTERNAL_DESCRIPTION;
+    private static String EXTERNAL_DESCRIPTION;
+    private static String USB_DESCRIPTION;
 
     private Object storageVolume;
     public int mStorageId;
@@ -30,6 +34,28 @@ public class Volume {
     public static final int MOUNT_INTERNAL = 0;
     public static final int MOUNT_EXTERNAL = 1;
     public static final int MOUNT_USB = 2;
+
+
+    static {
+        Resources resources = Resources.getSystem();
+        int internalStrRes = resources.getIdentifier("storage_internal", "string", "android");
+        if (internalStrRes != 0) {
+            INTERNAL_DESCRIPTION = resources.getString(internalStrRes);
+        }
+        int externalStrRse = resources.getIdentifier("storage_sd_card", "string", "android");
+        if (externalStrRse != 0) {
+            EXTERNAL_DESCRIPTION = resources.getString(externalStrRse);
+        } else {
+            EXTERNAL_DESCRIPTION = "SD";
+        }
+        int usbStrRes = resources.getIdentifier("storage_usb_drive", "string", "android");
+        if (usbStrRes != 0) {
+            USB_DESCRIPTION = resources.getString(usbStrRes);
+        } else {
+            USB_DESCRIPTION = "USB";
+        }
+    }
+
 
     private Volume() {
 
@@ -73,30 +99,18 @@ public class Volume {
         }
         //get type under android 6.0
         //judge by label
-        String label = mDescription.toUpperCase();
-        if (label.contains("USB") || label.contains("OTG")) {
+        String label = mDescription;
+        if (label.contains(USB_DESCRIPTION) || label.contains("U")) {
             return MOUNT_USB;
         }
-        if (label.contains("SD") || label.contains("CARD")) {
-            return MOUNT_EXTERNAL;
-        }
-        //judge by path
-        String path = mPath.toUpperCase();
-        if (path.contains("USB") || path.contains("OTG")) {
-            return MOUNT_USB;
-        }
-        if (path.contains("SD") || path.contains("CARD")) {
+        if (label.contains(EXTERNAL_DESCRIPTION) || label.contains("SD")) {
             return MOUNT_EXTERNAL;
         }
 
-        //juage by secondary_storage property
+        //judge by secondary_storage property
         String secondaryStorage = System.getenv("SECONDARY_STORAGE");
-        Logger.e("secondary path = " + secondaryStorage);
         if (secondaryStorage != null) {
             if (secondaryStorage.equals(mPath)) {
-                return MOUNT_EXTERNAL;
-            }
-            if (secondaryStorage.toUpperCase().contains("SD") || secondaryStorage.toUpperCase().contains("CARD")) {
                 return MOUNT_EXTERNAL;
             }
         }
@@ -104,7 +118,6 @@ public class Volume {
         //judge by path
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
         String extSdPath = sp.getString(FileConst.PREF_EXTERNAL_PATH, null);
-        Logger.e("extSd card = " + extSdPath);
         if (extSdPath != null) {
             if (mPath.contains(extSdPath)) {
                 return MOUNT_EXTERNAL;
@@ -118,13 +131,13 @@ public class Volume {
         String volumeId = (String) ReflectUtil.getPrivateField(storageVolume, "mId");
         Method volumeMethod = ReflectUtil.getPublicMethod(storageManager, "findVolumeById", String.class);
         if (volumeMethod == null) {
-            Log.e(LOG_TAG, "can't find method findVolumeById in class StorageManager");
+            Log.e(LOG_TAG, "can't find method \"findVolumeById\" in class StorageManager");
             return MOUNT_UNKNOWN;
         }
         Object volumeInfo = ReflectUtil.invokeMethod(volumeMethod, storageManager, volumeId);
         Object diskInfo = ReflectUtil.getPublicField(volumeInfo, "disk");
         if (diskInfo == null) {
-            Log.e(LOG_TAG, "can't find filed \'disk\' in class VolumeInfo");
+            Log.e(LOG_TAG, "can't find filed \"disk\" in class VolumeInfo");
             return MOUNT_UNKNOWN;
         }
 
@@ -142,16 +155,8 @@ public class Volume {
     }
 
     public String getState() {
-        return (String) ReflectUtil.getPrivateField(storageVolume, "mState");
-    }
-
-    public String toString0() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("mStorageId = ").append(mStorageId).append('\n')
-                .append("mPath = ").append(mPath).append('\n')
-                .append("mState = ").append(mState).append('\n')
-                .append("mDescription = ").append(mDescription).append('\n');
-        return sb.toString();
+        mState = (String) ReflectUtil.getPrivateField(storageVolume, "mState");
+        return mState;
     }
 
     public String toString() {

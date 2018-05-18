@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
+import android.provider.DocumentsContract;
 import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
@@ -142,7 +143,8 @@ public class StorageUtil {
         return file;
     }
 
-    public static String path2DocumentId(String path, String rootPath, String rootId) {
+    public static String path2DocumentId(String path, String rootPath, String rootUri) {
+        String rootId = DocumentsContract.getTreeDocumentId(Uri.parse(rootUri));
         if (path.equals(rootPath)) {
             return rootId;
         }

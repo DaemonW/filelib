@@ -1,71 +1,226 @@
 package com.daemonw.file.core.model;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.DocumentsContract;
+import android.text.TextUtils;
 
 import com.daemonw.file.core.utils.DocFileUtilApi19;
 import com.daemonw.file.core.utils.DocFileUtilApi21;
+import com.daemonw.file.core.utils.MimeTypes;
+import com.daemonw.file.core.utils.StorageUtil;
 
+import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 class DocFile {
     private Context mContext;
-    private Uri mUri;
+    private String mPath;
+    private String mRootPath;
+    private String mRootUri;
     private DocFile mParent;
+    private String mDocumentId;
+    private ContentResolver mCr;
+    private String mName;
+    private String mMimeType;
+    private long mLength;
+    private long mLastModified;
+    private boolean mIsDirectory;
+    private int mFlag;
+    private Uri mUri;
+    private boolean mExist;
 
-    DocFile(Context context, Uri uri) {
+    public DocFile(Context context, String filePath, String rootPath, String rootUri) {
         mContext = context;
+        mCr = mContext.getContentResolver();
+        mPath = filePath;
+        mRootPath = rootPath;
+        mRootUri = rootUri;
+        if (mPath.equals(mRootPath)) {
+            mParent = null;
+        } else {
+            String parentPath = new File(mPath).getParent();
+            mParent = new DocFile(context, parentPath, rootPath, rootUri);
+        }
+        mDocumentId = StorageUtil.path2DocumentId(mPath, mRootPath, mRootUri);
+        updateFileInfo();
+    }
+
+
+    private DocFile(Context context, String filePath, String rootPath, String rootUri, Cursor cursor) {
+        mContext = context;
+        mCr = mContext.getContentResolver();
+        mPath = filePath;
+        mRootPath = rootPath;
+        mRootUri = rootUri;
+        if (mPath.equals(mRootPath)) {
+            mParent = null;
+        } else {
+            String parentPath = new File(mPath).getParent();
+            mParent = new DocFile(context, parentPath, rootPath, rootUri);
+        }
+        mDocumentId = StorageUtil.path2DocumentId(mPath, mRootPath, mRootUri);
+        mExist = true;
+        try {
+            mName = cursor.getString(0);
+            mLength = cursor.getLong(1);
+            mLastModified = cursor.getLong(2);
+            mMimeType = cursor.getString(3);
+            mIsDirectory = mMimeType.equals(DocumentsContract.Document.MIME_TYPE_DIR);
+            mFlag = cursor.getInt(4);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private DocFile(Context context, String filePath, String rootPath, String rootUri, Uri uri) {
+        mContext = context;
+        mCr = mContext.getContentResolver();
+        mPath = filePath;
+        mRootPath = rootPath;
+        mRootUri = rootUri;
+        if (mPath.equals(mRootPath)) {
+            mParent = null;
+        } else {
+            String parentPath = new File(mPath).getParent();
+            mParent = new DocFile(context, parentPath, rootPath, rootUri);
+        }
         mUri = uri;
+        mDocumentId = DocumentsContract.getDocumentId(uri);
+        updateFileInfo();
     }
 
-    public DocFile createFile(String mimeType, String displayName) throws IOException {
-        final Uri result = DocFileUtilApi21.createFile(mContext, mUri, mimeType, displayName);
-        return (result != null) ? new DocFile(mContext, result) : null;
+    private void updateFileInfo() {
+        if (mUri == null) {
+            mUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mDocumentId);
+        }
+        Cursor cursor = mContext.getContentResolver().query(mUri, new String[]{
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_SIZE,
+                        DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        DocumentsContract.Document.COLUMN_FLAGS},
+                null, null, null);
+        if (cursor == null || !cursor.moveToNext()) {
+            mExist = false;
+            return;
+        }
+        mExist = true;
+        try {
+            mName = cursor.getString(0);
+            mLength = cursor.getLong(1);
+            mLastModified = cursor.getLong(2);
+            mMimeType = cursor.getString(3);
+            mIsDirectory = mMimeType.equals(DocumentsContract.Document.MIME_TYPE_DIR);
+            mFlag = cursor.getInt(4);
+
+        } finally {
+            closeQuietly(cursor);
+        }
     }
 
-    public DocFile createDirectory(String displayName) throws IOException {
-        final Uri result = DocFileUtilApi21.createDirectory(mContext, mUri, displayName);
-        return (result != null) ? new DocFile(mContext, result) : null;
+    public String getPath() {
+        return mPath;
+    }
+
+    public DocFile getParentFile() {
+        return mParent;
+    }
+
+    public String getMimeType() {
+        return mMimeType;
+    }
+
+    public String getParent() {
+        return mParent.getPath();
+    }
+
+    public String getDocumentId() {
+        return mDocumentId;
+    }
+
+    public String getName() {
+        return mName;
+    }
+
+    public long length() {
+        return mLength;
+    }
+
+    public long lastModified() {
+        return mLastModified;
+    }
+
+    public boolean isDirectory() {
+        return mIsDirectory;
+    }
+
+    public boolean isFile() {
+        return !mIsDirectory;
     }
 
     public Uri getUri() {
         return mUri;
     }
 
-    public String getName() {
-        return DocFileUtilApi19.getName(mContext, mUri);
-    }
-
-    public String getType() {
-        return DocFileUtilApi19.getType(mContext, mUri);
-    }
-
-    public boolean isDirectory() {
-        return DocFileUtilApi19.isDirectory(mContext, mUri);
-    }
-
-    public boolean isFile() {
-        return DocFileUtilApi19.isFile(mContext, mUri);
-    }
-
-    public boolean isVirtual() {
-        return DocFileUtilApi19.isVirtual(mContext, mUri);
-    }
-
-    public long lastModified() {
-        return DocFileUtilApi19.lastModified(mContext, mUri);
-    }
-
-    public long length() {
-        return DocFileUtilApi19.length(mContext, mUri);
-    }
 
     public boolean canRead() {
-        return DocFileUtilApi19.canRead(mContext, mUri);
+        // Ignore documents without MIME
+        if (TextUtils.isEmpty(mMimeType)) {
+            return false;
+        }
+        return true;
     }
 
     public boolean canWrite() {
-        return DocFileUtilApi19.canWrite(mContext, mUri);
+        // Ignore documents without MIME
+        if (TextUtils.isEmpty(mMimeType)) {
+            return false;
+        }
+        // Deletable documents considered writable
+        if ((mFlag & DocumentsContract.Document.FLAG_SUPPORTS_DELETE) != 0) {
+            return true;
+        }
+        if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mMimeType)
+                && (mFlag & DocumentsContract.Document.FLAG_DIR_SUPPORTS_CREATE) != 0) {
+            // Directories that allow create considered writable
+            return true;
+        } else if (!TextUtils.isEmpty(mMimeType)
+                && (mFlag & DocumentsContract.Document.FLAG_SUPPORTS_WRITE) != 0) {
+            // Writable normal files considered writable
+            return true;
+        }
+        return false;
+    }
+
+    public DocFile createFile(String fileName) throws IOException {
+        if (mUri == null) {
+            return null;
+        }
+        String name = new File(fileName).getName();
+        Uri childUri = DocumentsContract.createDocument(mCr, mUri, MimeTypes.getMimeType(name), name);
+        if (childUri != null) {
+            return new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, childUri);
+        }
+        return null;
+    }
+
+    public DocFile createDirectory(String fileName) throws IOException {
+        if (mUri == null) {
+            return null;
+        }
+        String name = new File(fileName).getName();
+        Uri childUri = DocumentsContract.createDocument(mCr, mUri, DocumentsContract.Document.MIME_TYPE_DIR, name);
+        if (childUri != null) {
+            return new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, childUri);
+        }
+        return null;
     }
 
     public boolean delete() {
@@ -73,21 +228,44 @@ class DocFile {
     }
 
     public boolean exists() {
-        return DocFileUtilApi19.exists(mContext, mUri);
+        return mExist;
     }
 
-    public DocFile[] listFiles() {
-        final Uri[] result = DocFileUtilApi21.listFiles(mContext, mUri);
-        final DocFile[] resultFiles = new DocFile[result.length];
-        for (int i = 0; i < result.length; i++) {
-            resultFiles[i] = new DocFile(mContext, result[i]);
+    public List<DocFile> listFiles() {
+        Uri uri = DocumentsContract.buildChildDocumentsUriUsingTree(Uri.parse(mRootUri), mDocumentId);
+        Cursor childCursor = mContext.getContentResolver().query(uri, new String[]{
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_SIZE,
+                        DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        DocumentsContract.Document.COLUMN_FLAGS},
+                null, null, null);
+        if (childCursor == null) {
+            return null;
         }
-        return resultFiles;
+        ArrayList<DocFile> subFiles = new ArrayList<>();
+        try {
+            while (childCursor.moveToNext()) {
+                String name = childCursor.getString(0);
+                subFiles.add(new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, childCursor));
+            }
+        } finally {
+            closeQuietly(childCursor);
+        }
+        return subFiles;
     }
 
-    public boolean renameTo(String displayName) throws IOException {
-        final Uri result = DocFileUtilApi21.renameTo(mContext, mUri, displayName);
+    public boolean isRoot() {
+        return mParent == null;
+    }
+
+    public boolean renameTo(String fileName) throws IOException {
+        String name = new File(fileName).getName();
+        final Uri result = DocFileUtilApi21.renameTo(mContext, mUri, name);
         if (result != null) {
+            mPath = getParent() + "./" + name;
+            mName = name;
+            mDocumentId = DocumentsContract.getDocumentId(mUri);
             mUri = result;
             return true;
         } else {
@@ -95,16 +273,13 @@ class DocFile {
         }
     }
 
-    public DocFile findFile(String displayName) {
-        for (DocFile doc : listFiles()) {
-            if (displayName.equals(doc.getName())) {
-                return doc;
+    private void closeQuietly(Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
-        return null;
-    }
-
-    public DocFile getParentFile() {
-        return mParent;
     }
 }

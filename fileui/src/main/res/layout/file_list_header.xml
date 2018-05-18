@@ -18,14 +18,14 @@
     <TextView
         android:id="@+id/file_name"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/file_icon"
+        android:layout_height="48dp"
         android:layout_toEndOf="@+id/file_icon"
         android:gravity="center_vertical"
         android:ellipsize="end"
         android:singleLine="true"
         android:textColor="#232323"
         android:textStyle="bold"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        android:text="..."/>
 
 </RelativeLayout>

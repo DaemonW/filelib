@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 
 import com.daemonw.file.FileConst;
@@ -17,6 +18,10 @@ import com.orhanobut.logger.Logger;
 
 public class UsbMountReceiver extends BroadcastReceiver {
     private static final String TAG = UsbMountReceiver.class.getSimpleName();
+
+    private final static String USB_STATE_ACTION = "android.hardware.usb.action.USB_STATE";
+    private static final String USB_CONNECTED = "connected";
+    private static final String USB_HOST_CONNECTED = "host_connected";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -40,6 +45,12 @@ public class UsbMountReceiver extends BroadcastReceiver {
                 editor.putBoolean(FileConst.PREF_USB_MOUNTED, false);
                 editor.apply();
                 Logger.d("USB Detached, Name = " + device.getProductName());
+            }
+        } else if (USB_STATE_ACTION.equals(action)) {
+            Bundle extras = intent.getExtras();
+            if (extras != null) {
+                boolean connected = intent.getExtras().getBoolean(USB_HOST_CONNECTED, false);
+                Logger.d("USB Host State, connect = " + connected);
             }
         }
 

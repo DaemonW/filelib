@@ -14,6 +14,7 @@ import android.util.Log;
 import com.daemonw.file.FileConst;
 import com.daemonw.file.core.exception.PermException;
 import com.daemonw.file.core.reflect.Volume;
+import com.orhanobut.logger.Logger;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -112,19 +113,26 @@ public class StorageUtil {
     }
 
 
-    public static DocumentFile findDocumentFile(Context context, String filePath, String rootPath, String rootUri) {
-        if (filePath == null || rootPath == null || rootUri == null) {
+    public static DocumentFile findDocumentFile(Context context, String filePath) {
+        Volume volume = null;
+        List<Volume> volumes = StorageUtil.getVolumes(context);
+        for (Volume v : volumes) {
+            if (filePath.startsWith(v.mPath)) {
+                volume = v;
+                break;
+            }
+        }
+        if (volume == null) {
+            Logger.e("can't found document file from path: " + filePath);
             return null;
         }
-        if (!filePath.startsWith(rootPath)) {
-            return null;
-        }
+        String rootUri = getMountUri(context, volume.mountType);
         DocumentFile rootFile = DocumentFile.fromTreeUri(context, Uri.parse(rootUri));
-        if (filePath.equals(rootPath)) {
+        if (filePath.equals(volume.mPath)) {
             return rootFile;
         }
-        int startIndex = rootPath.length();
-        if (!rootPath.endsWith("/")) {
+        int startIndex = volume.mPath.length();
+        if (!volume.mPath.endsWith("/")) {
             startIndex = startIndex + 1;
         }
         String relativePath = filePath.substring(startIndex);
@@ -140,6 +148,18 @@ public class StorageUtil {
             }
         }
         return file;
+    }
+
+    public static String path2DocumentId(String path, String rootPath, String rootId) {
+        if (path.equals(rootPath)) {
+            return rootId;
+        }
+        int startIndex = rootPath.length();
+        if (!rootPath.endsWith("/")) {
+            startIndex = startIndex + 1;
+        }
+        String relativePath = path.substring(startIndex);
+        return rootId + relativePath;
     }
 
     public static boolean hasWritePermission(Context context, int mountType) {

@@ -6,7 +6,6 @@ import android.content.res.Resources;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 import com.daemonw.file.FileConst;
 import com.daemonw.file.core.utils.BuildUtils;
@@ -131,13 +130,13 @@ public class Volume {
         String volumeId = (String) ReflectUtil.getPrivateField(storageVolume, "mId");
         Method volumeMethod = ReflectUtil.getPublicMethod(storageManager, "findVolumeById", String.class);
         if (volumeMethod == null) {
-            Log.e(LOG_TAG, "can't find method \"findVolumeById\" in class StorageManager");
+            Logger.e(LOG_TAG, "can't find method \"findVolumeById\" in class StorageManager");
             return MOUNT_UNKNOWN;
         }
         Object volumeInfo = ReflectUtil.invokeMethod(volumeMethod, storageManager, volumeId);
         Object diskInfo = ReflectUtil.getPublicField(volumeInfo, "disk");
         if (diskInfo == null) {
-            Log.e(LOG_TAG, "can't find filed \"disk\" in class VolumeInfo");
+            Logger.e(LOG_TAG, "can't find filed \"disk\" in class VolumeInfo");
             return MOUNT_UNKNOWN;
         }
 

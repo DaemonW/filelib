@@ -5,11 +5,9 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.provider.DocumentFile;
 
-import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.MimeTypes;
 import com.daemonw.file.core.utils.RawFileUtil;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.orhanobut.logger.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,7 +15,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.List;
 
 public class ExternalFile extends Filer {
     public static final String EXTERNAL_STORAGE_URI = "content://com.android.externalstorage.documents/tree/";
@@ -326,21 +323,7 @@ public class ExternalFile extends Filer {
         if (mSafFile != null) {
             return mSafFile;
         }
-        DocumentFile file = null;
-        Volume volume = null;
-        List<Volume> volumes = StorageUtil.getVolumes(mContext);
-        for (Volume v : volumes) {
-            if (mPath.startsWith(v.mPath)) {
-                volume = v;
-                break;
-            }
-        }
-        if (volume == null) {
-            Logger.e("can't found document file from path " + mPath);
-            return null;
-        }
-        String rootUri = StorageUtil.getMountUri(mContext, volume.mountType);
-        file = StorageUtil.findDocumentFile(mContext, mPath, volume.mPath, rootUri);
+        DocumentFile file = StorageUtil.findDocumentFile(mContext, mPath);
         mSafFile = file;
         return file;
     }

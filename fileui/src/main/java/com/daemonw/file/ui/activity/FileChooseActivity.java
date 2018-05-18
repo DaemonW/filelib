@@ -116,6 +116,9 @@ public class FileChooseActivity extends AppCompatActivity implements MultiItemTy
         FileAdapterWrapper adapter = null;
         try {
             String rootPath = StorageUtil.getMountPath(mContext, mountType);
+            if (rootPath == null) {
+                return null;
+            }
             adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, false);
             adapter.setOnItemClickListener(this);
             adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {

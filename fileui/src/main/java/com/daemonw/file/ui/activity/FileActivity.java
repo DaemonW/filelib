@@ -89,6 +89,9 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         FileAdapterWrapper adapter = null;
         try {
             String rootPath = StorageUtil.getMountPath(mContext, mountType);
+            if (rootPath == null) {
+                return null;
+            }
             adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, true);
             adapter.setOnItemClickListener(this);
             adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {

@@ -65,6 +65,7 @@ class DocFile {
             mParent = new DocFile(context, parentPath, rootPath, rootUri);
         }
         mDocumentId = StorageUtil.path2DocumentId(mPath, mRootPath, mRootUri);
+        mUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mDocumentId);
         mExist = true;
         try {
             mName = cursor.getString(0);

@@ -21,11 +21,11 @@ import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.RxUtil;
 import com.daemonw.file.core.utils.StorageUtil;
 import com.daemonw.file.ui.OnFileChooseListener;
+import com.daemonw.file.ui.R;
+import com.daemonw.file.ui.activity.GrantPermissionActivity;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;
 import com.daemonw.file.ui.adapter.VolumeAdapter;
 import com.daemonw.file.ui.util.UIUtil;
-import com.daemonw.file.ui.R;
-import com.daemonw.file.ui.activity.GrantPermissionActivity;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 
@@ -134,6 +134,9 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         FileAdapterWrapper adapter = null;
         try {
             String rootPath = StorageUtil.getMountPath(mContext, mountType);
+            if (rootPath == null) {
+                return null;
+            }
             adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, showFile);
             adapter.setOnItemClickListener(this);
             adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {

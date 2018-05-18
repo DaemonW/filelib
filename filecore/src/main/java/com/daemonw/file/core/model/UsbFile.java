@@ -22,26 +22,33 @@ public class UsbFile extends Filer {
     private File mRawFile;
     private DocumentFile mSafFile;
     private Context mContext;
+    private String mRootPath;
+    private String mRootUri;
 
-    public UsbFile(Context context, String filePath) {
+    public UsbFile(Context context, String filePath, String rootPath, String rootUri) {
         mContext = context;
         mPath = filePath;
         mRawFile = new File(filePath);
+        mRootPath = rootPath;
+        mRootUri = rootUri;
         mType = TYPE_USB;
     }
 
-    public UsbFile(Context context, File file) {
+    public UsbFile(Context context, File file, String rootPath, String rootUri) {
         mContext = context;
         mPath = file.getAbsolutePath();
         mRawFile = file;
+        mRootPath = rootPath;
+        mRootUri = rootUri;
         mType = TYPE_USB;
     }
 
-    private UsbFile(Context context, String filePath, DocumentFile file) {
+    private UsbFile(Context context, String filePath, String rootPath, String rootUri, DocumentFile file) {
         mContext = context;
-        mType = TYPE_EXTERNAL;
         mRawFile = new File(filePath);
         mPath = mRawFile.getAbsolutePath();
+        mRootPath = rootPath;
+        mRootUri = rootUri;
         mSafFile = file;
         mType = TYPE_USB;
     }
@@ -65,7 +72,7 @@ public class UsbFile extends Filer {
         if (canRawWrite()) {
             File newRawFile = new File(mRawFile, name);
             newRawFile.createNewFile();
-            return new UsbFile(mContext, newRawFile);
+            return new UsbFile(mContext, newRawFile, mRootPath, mRootUri);
         }
         DocumentFile file = getDocumentFile();
         if (file == null) {
@@ -75,7 +82,7 @@ public class UsbFile extends Filer {
         if (newSafFile == null) {
             return null;
         }
-        return new UsbFile(mContext, mPath + "/" + name, newSafFile);
+        return new UsbFile(mContext, mPath + "/" + name, mRootPath, mRootUri, newSafFile);
     }
 
     @Override
@@ -87,7 +94,7 @@ public class UsbFile extends Filer {
             if (!success) {
                 throw new IOException("create directory failed");
             }
-            return new UsbFile(mContext, newFolder);
+            return new UsbFile(mContext, newFolder, mRootPath, mRootUri);
         }
         DocumentFile file = getDocumentFile();
         if (file == null) {
@@ -97,7 +104,7 @@ public class UsbFile extends Filer {
         if (newSafFolder == null) {
             return null;
         }
-        return new UsbFile(mContext, mPath + "/" + name, newSafFolder);
+        return new UsbFile(mContext, mPath + "/" + name, mRootPath, mRootUri, newSafFolder);
     }
 
     @Override
@@ -125,14 +132,14 @@ public class UsbFile extends Filer {
     @Override
     public Filer getParentFile() {
         if (canRawRead()) {
-            return new UsbFile(mContext, mRawFile.getParentFile());
+            return new UsbFile(mContext, mRawFile.getParentFile(), mRootPath, mRootUri);
         }
         DocumentFile file = getDocumentFile();
         if (file == null) {
             return null;
         }
         DocumentFile parent = file.getParentFile();
-        return new UsbFile(mContext, new File(mPath).getParent(), parent);
+        return new UsbFile(mContext, new File(mPath).getParent(), mRootPath, mRootUri, parent);
     }
 
     @Override
@@ -182,7 +189,7 @@ public class UsbFile extends Filer {
                 return subFiles;
             }
             for (File f : subRaw) {
-                subFiles.add(new UsbFile(mContext, f));
+                subFiles.add(new UsbFile(mContext, f, mRootPath, mRootUri));
             }
         } else {
             DocumentFile file = getDocumentFile();
@@ -194,7 +201,7 @@ public class UsbFile extends Filer {
                 return subFiles;
             }
             for (DocumentFile f : subSaf) {
-                subFiles.add(new UsbFile(mContext, mPath + "/" + f.getName(), f));
+                subFiles.add(new UsbFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f));
             }
         }
         return subFiles;
@@ -326,7 +333,7 @@ public class UsbFile extends Filer {
         if (mSafFile != null) {
             return mSafFile;
         }
-        DocumentFile file = StorageUtil.findDocumentFile(mContext, mPath);
+        DocumentFile file = StorageUtil.findDocumentFile(mContext, mPath, mRootPath, mRootUri);
         mSafFile = file;
         return file;
     }

@@ -22,26 +22,33 @@ public class ExternalFile extends Filer {
     private File mRawFile;
     private DocumentFile mSafFile;
     private Context mContext;
+    private String mRootPath;
+    private String mRootUri;
 
-    public ExternalFile(Context context, String filePath) {
+    public ExternalFile(Context context, String filePath, String rootPath, String rootUri) {
         mContext = context;
         mPath = filePath;
         mRawFile = new File(filePath);
+        mRootPath = rootPath;
+        mRootUri = rootUri;
         mType = TYPE_EXTERNAL;
     }
 
-    public ExternalFile(Context context, File file) {
+    public ExternalFile(Context context, File file, String rootPath, String rootUri) {
         mContext = context;
         mPath = file.getAbsolutePath();
         mRawFile = file;
+        mRootPath = rootPath;
+        mRootUri = rootUri;
         mType = TYPE_EXTERNAL;
     }
 
-    private ExternalFile(Context context, String filePath, DocumentFile file) {
+    private ExternalFile(Context context, String filePath, String rootPath, String rootUri, DocumentFile file) {
         mContext = context;
-        mType = TYPE_EXTERNAL;
         mRawFile = new File(filePath);
         mPath = mRawFile.getAbsolutePath();
+        mRootPath = rootPath;
+        mRootUri = rootUri;
         mSafFile = file;
         mType = TYPE_EXTERNAL;
     }
@@ -65,7 +72,7 @@ public class ExternalFile extends Filer {
         if (canRawWrite()) {
             File newRawFile = new File(mRawFile, name);
             newRawFile.createNewFile();
-            return new ExternalFile(mContext, newRawFile);
+            return new ExternalFile(mContext, newRawFile, mRootPath, mRootUri);
         }
         DocumentFile file = getDocumentFile();
         if (file == null) {
@@ -75,7 +82,7 @@ public class ExternalFile extends Filer {
         if (newSafFile == null) {
             return null;
         }
-        return new ExternalFile(mContext, mPath + "/" + name, newSafFile);
+        return new ExternalFile(mContext, mPath + "/" + name, mRootPath, mRootUri, newSafFile);
     }
 
     @Override
@@ -87,7 +94,7 @@ public class ExternalFile extends Filer {
             if (!success) {
                 throw new IOException("create directory failed");
             }
-            return new ExternalFile(mContext, newFolder);
+            return new ExternalFile(mContext, newFolder, mRootPath, mRootUri);
         }
         DocumentFile file = getDocumentFile();
         if (file == null) {
@@ -97,7 +104,7 @@ public class ExternalFile extends Filer {
         if (newSafFolder == null) {
             return null;
         }
-        return new ExternalFile(mContext, mPath + "/" + name, newSafFolder);
+        return new ExternalFile(mContext, mPath + "/" + name, mRootPath, mRootUri, newSafFolder);
     }
 
     @Override
@@ -125,14 +132,14 @@ public class ExternalFile extends Filer {
     @Override
     public Filer getParentFile() {
         if (canRawRead()) {
-            return new ExternalFile(mContext, mRawFile.getParentFile());
+            return new ExternalFile(mContext, mRawFile.getParentFile(), mRootPath, mRootUri);
         }
         DocumentFile file = getDocumentFile();
         if (file == null) {
             return null;
         }
         DocumentFile parent = file.getParentFile();
-        return new ExternalFile(mContext, mRawFile.getParent(), parent);
+        return new ExternalFile(mContext, new File(mPath).getParent(), mRootPath, mRootUri, parent);
     }
 
     @Override
@@ -182,7 +189,7 @@ public class ExternalFile extends Filer {
                 return subFiles;
             }
             for (File f : subRaw) {
-                subFiles.add(new ExternalFile(mContext, f));
+                subFiles.add(new ExternalFile(mContext, f, mRootPath, mRootUri));
             }
         } else {
             DocumentFile file = getDocumentFile();
@@ -194,7 +201,7 @@ public class ExternalFile extends Filer {
                 return subFiles;
             }
             for (DocumentFile f : subSaf) {
-                subFiles.add(new ExternalFile(mContext, mPath + "/" + f.getName(), f));
+                subFiles.add(new ExternalFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f));
             }
         }
         return subFiles;
@@ -250,6 +257,9 @@ public class ExternalFile extends Filer {
             return mRawFile.renameTo(new File(mRawFile.getParent(), name));
         }
         DocumentFile file = getDocumentFile();
+        if (file == null) {
+            return false;
+        }
         return file.renameTo(name);
     }
 
@@ -323,7 +333,7 @@ public class ExternalFile extends Filer {
         if (mSafFile != null) {
             return mSafFile;
         }
-        DocumentFile file = StorageUtil.findDocumentFile(mContext, mPath);
+        DocumentFile file = StorageUtil.findDocumentFile(mContext, mPath, mRootPath, mRootUri);
         mSafFile = file;
         return file;
     }

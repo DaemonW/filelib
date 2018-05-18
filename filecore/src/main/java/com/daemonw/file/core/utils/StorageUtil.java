@@ -9,6 +9,7 @@ import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
 import android.support.v4.provider.DocumentFile;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.daemonw.file.FileConst;
@@ -30,6 +31,7 @@ public class StorageUtil {
         List<StorageVolume> volumeList = getStorageVolumeList(storageManager);
         List<Volume> volumes = new ArrayList<>();
         for (StorageVolume v : volumeList) {
+            Logger.d("getVolumeList: %s ", v.toString());
             Volume vol = Volume.fromStorageVolume(context, v);
             if (vol.getState().equals(Environment.MEDIA_MOUNTED)) {
                 volumes.add(vol);
@@ -113,26 +115,16 @@ public class StorageUtil {
     }
 
 
-    public static DocumentFile findDocumentFile(Context context, String filePath) {
-        Volume volume = null;
-        List<Volume> volumes = StorageUtil.getVolumes(context);
-        for (Volume v : volumes) {
-            if (filePath.startsWith(v.mPath)) {
-                volume = v;
-                break;
-            }
-        }
-        if (volume == null) {
-            Logger.e("can't found document file from path: " + filePath);
+    public static DocumentFile findDocumentFile(Context context, String filePath, String rootPath, String rootUri) {
+        if (TextUtils.isEmpty(filePath) || TextUtils.isEmpty(rootPath) || TextUtils.isEmpty(rootUri)) {
             return null;
         }
-        String rootUri = getMountUri(context, volume.mountType);
         DocumentFile rootFile = DocumentFile.fromTreeUri(context, Uri.parse(rootUri));
-        if (filePath.equals(volume.mPath)) {
+        if (filePath.equals(rootPath)) {
             return rootFile;
         }
-        int startIndex = volume.mPath.length();
-        if (!volume.mPath.endsWith("/")) {
+        int startIndex = rootPath.length();
+        if (!rootPath.endsWith("/")) {
             startIndex = startIndex + 1;
         }
         String relativePath = filePath.substring(startIndex);

@@ -9,8 +9,6 @@ import com.daemonw.file.core.utils.StorageUtil;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +19,8 @@ import java.util.List;
 public class HybirdFile extends Filer {
     private Filer fileDelegate;
     private Context mContext;
+    private String rootPath;
+    private String rootUri;
 
     public HybirdFile(Activity context, String filePath, int type) {
         mContext = context;
@@ -29,10 +29,20 @@ public class HybirdFile extends Filer {
                 fileDelegate = new RawFile(filePath);
                 break;
             case Filer.TYPE_EXTERNAL:
-                fileDelegate = new ExternalFile(context, filePath);
+                Volume v1 = StorageUtil.getMountVolume(context, type);
+                if (v1 != null) {
+                    rootPath = v1.mPath;
+                    rootUri = StorageUtil.getMountUri(context, v1.mountType);
+                    fileDelegate = new ExternalFile(context, filePath, rootPath, rootUri);
+                }
                 break;
             case Filer.TYPE_USB:
-                fileDelegate = new UsbFile(context, filePath);
+                Volume v2 = StorageUtil.getMountVolume(context, type);
+                if (v2 != null) {
+                    rootPath = v2.mPath;
+                    rootUri = StorageUtil.getMountUri(context, v2.mountType);
+                    fileDelegate = new UsbFile(context, filePath, rootPath, rootUri);
+                }
                 break;
         }
     }
@@ -46,10 +56,14 @@ public class HybirdFile extends Filer {
                     fileDelegate = new RawFile(filePath);
                     break;
                 case Filer.TYPE_EXTERNAL:
-                    fileDelegate = new ExternalFile(context, filePath);
+                    rootPath = v.mPath;
+                    rootUri = StorageUtil.getMountUri(context, v.mountType);
+                    fileDelegate = new ExternalFile(context, filePath, rootPath, rootUri);
                     break;
                 case Filer.TYPE_USB:
-                    fileDelegate = new UsbFile(context, filePath);
+                    rootPath = v.mPath;
+                    rootUri = StorageUtil.getMountUri(context, v.mountType);
+                    fileDelegate = new UsbFile(context, filePath, rootPath, rootUri);
                     break;
             }
         }

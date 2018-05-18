@@ -3,6 +3,8 @@ package com.daemonw.file;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ContentUris;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -55,7 +57,8 @@ public class MainActivity extends AppCompatActivity {
         if (!isGrantExternalRW(this)) {
             return;
         }
-
+        Intent intent = new Intent(this, FileManagerActivity.class);
+        startActivity(intent);
     }
 
 

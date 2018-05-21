@@ -19,6 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 class DocFile {
+
+    private final String[] DOCUMENT_PROJECTION = new String[]{
+            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            DocumentsContract.Document.COLUMN_SIZE,
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+            DocumentsContract.Document.COLUMN_MIME_TYPE,
+            DocumentsContract.Document.COLUMN_FLAGS
+    };
+
     private Context mContext;
     private String mPath;
     private String mRootPath;
@@ -101,26 +110,25 @@ class DocFile {
         if (mUri == null) {
             mUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mDocumentId);
         }
-        Cursor cursor = mContext.getContentResolver().query(mUri, new String[]{
-                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                        DocumentsContract.Document.COLUMN_SIZE,
-                        DocumentsContract.Document.COLUMN_LAST_MODIFIED,
-                        DocumentsContract.Document.COLUMN_MIME_TYPE,
-                        DocumentsContract.Document.COLUMN_FLAGS},
+        Cursor cursor = mContext.getContentResolver().query(mUri, DOCUMENT_PROJECTION,
                 null, null, null);
-        if (cursor == null || !cursor.moveToNext()) {
+        if (cursor == null) {
             mExist = false;
             return;
         }
-        mExist = true;
         try {
-            mName = cursor.getString(0);
-            mLength = cursor.getLong(1);
-            mLastModified = cursor.getLong(2);
-            mMimeType = cursor.getString(3);
-            mIsDirectory = mMimeType.equals(DocumentsContract.Document.MIME_TYPE_DIR);
-            mFlag = cursor.getInt(4);
+            if (cursor.moveToNext()) {
+                mExist = true;
+                mName = cursor.getString(0);
+                mLength = cursor.getLong(1);
+                mLastModified = cursor.getLong(2);
+                mMimeType = cursor.getString(3);
+                mIsDirectory = mMimeType.equals(DocumentsContract.Document.MIME_TYPE_DIR);
+                mFlag = cursor.getInt(4);
+            }
 
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             closeQuietly(cursor);
         }
@@ -234,12 +242,7 @@ class DocFile {
 
     public List<DocFile> listFiles() {
         Uri uri = DocumentsContract.buildChildDocumentsUriUsingTree(Uri.parse(mRootUri), mDocumentId);
-        Cursor childCursor = mContext.getContentResolver().query(uri, new String[]{
-                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                        DocumentsContract.Document.COLUMN_SIZE,
-                        DocumentsContract.Document.COLUMN_LAST_MODIFIED,
-                        DocumentsContract.Document.COLUMN_MIME_TYPE,
-                        DocumentsContract.Document.COLUMN_FLAGS},
+        Cursor childCursor = mContext.getContentResolver().query(uri, DOCUMENT_PROJECTION,
                 null, null, null);
         if (childCursor == null) {
             return null;
@@ -250,6 +253,8 @@ class DocFile {
                 String name = childCursor.getString(0);
                 subFiles.add(new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, childCursor));
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             closeQuietly(childCursor);
         }

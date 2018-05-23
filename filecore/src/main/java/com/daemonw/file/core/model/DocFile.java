@@ -20,7 +20,7 @@ import java.util.List;
 
 class DocFile {
 
-    private final String[] DOCUMENT_PROJECTION = new String[]{
+    private final static String[] DOCUMENT_PROJECTION = new String[]{
             DocumentsContract.Document.COLUMN_DISPLAY_NAME,
             DocumentsContract.Document.COLUMN_SIZE,
             DocumentsContract.Document.COLUMN_LAST_MODIFIED,
@@ -33,7 +33,7 @@ class DocFile {
     private String mRootPath;
     private String mRootUri;
     private DocFile mParent;
-    private String mDocumentId;
+    private String mTreeDocumentId;
     private ContentResolver mCr;
     private String mName;
     private String mMimeType;
@@ -41,40 +41,28 @@ class DocFile {
     private long mLastModified;
     private boolean mIsDirectory;
     private int mFlag;
-    private Uri mUri;
+    private Uri mDocumentUri;
     private boolean mExist;
 
     public DocFile(Context context, String filePath, String rootPath, String rootUri) {
-        mContext = context;
-        mCr = mContext.getContentResolver();
-        mPath = filePath;
-        mRootPath = rootPath;
-        mRootUri = rootUri;
-        if (mPath.equals(mRootPath)) {
-            mParent = null;
-        } else {
-            String parentPath = new File(mPath).getParent();
-            mParent = new DocFile(context, parentPath, rootPath, rootUri);
-        }
-        mDocumentId = StorageUtil.path2DocumentId(mPath, mRootPath, mRootUri);
+        this(context, filePath, rootPath, rootUri, null);
         updateFileInfo();
     }
 
-
-    private DocFile(Context context, String filePath, String rootPath, String rootUri, Cursor cursor) {
+    private DocFile(Context context, String filePath, String rootPath, String rootUri, DocFile parent) {
         mContext = context;
         mCr = mContext.getContentResolver();
         mPath = filePath;
         mRootPath = rootPath;
         mRootUri = rootUri;
-        if (mPath.equals(mRootPath)) {
-            mParent = null;
-        } else {
-            String parentPath = new File(mPath).getParent();
-            mParent = new DocFile(context, parentPath, rootPath, rootUri);
-        }
-        mDocumentId = StorageUtil.path2DocumentId(mPath, mRootPath, mRootUri);
-        mUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mDocumentId);
+        mParent = parent;
+        mTreeDocumentId = StorageUtil.path2TreeDocumentId(mPath, mRootPath, mRootUri);
+    }
+
+
+    private DocFile(Context context, String filePath, String rootPath, String rootUri, DocFile parent, Cursor cursor) {
+        this(context, filePath, rootPath, rootUri, parent);
+        mDocumentUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mTreeDocumentId);
         mExist = true;
         try {
             mName = cursor.getString(0);
@@ -89,28 +77,17 @@ class DocFile {
         }
     }
 
-    private DocFile(Context context, String filePath, String rootPath, String rootUri, Uri uri) {
-        mContext = context;
-        mCr = mContext.getContentResolver();
-        mPath = filePath;
-        mRootPath = rootPath;
-        mRootUri = rootUri;
-        if (mPath.equals(mRootPath)) {
-            mParent = null;
-        } else {
-            String parentPath = new File(mPath).getParent();
-            mParent = new DocFile(context, parentPath, rootPath, rootUri);
-        }
-        mUri = uri;
-        mDocumentId = DocumentsContract.getDocumentId(uri);
+    private DocFile(Context context, String filePath, String rootPath, String rootUri, DocFile parent, Uri uri) {
+        this(context, filePath, rootPath, rootUri, parent);
+        mDocumentUri = uri;
         updateFileInfo();
     }
 
     private void updateFileInfo() {
-        if (mUri == null) {
-            mUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mDocumentId);
+        if (mDocumentUri == null) {
+            mDocumentUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mTreeDocumentId);
         }
-        Cursor cursor = mContext.getContentResolver().query(mUri, DOCUMENT_PROJECTION,
+        Cursor cursor = mContext.getContentResolver().query(mDocumentUri, DOCUMENT_PROJECTION,
                 null, null, null);
         if (cursor == null) {
             mExist = false;
@@ -139,6 +116,14 @@ class DocFile {
     }
 
     public DocFile getParentFile() {
+        if (mParent == null) {
+            if (mPath.equals(mRootPath)) {
+                mParent = null;
+            } else {
+                String parent = new File(mPath).getParent();
+                mParent = new DocFile(mContext, parent, mRootPath, mRootUri);
+            }
+        }
         return mParent;
     }
 
@@ -147,11 +132,12 @@ class DocFile {
     }
 
     public String getParent() {
-        return mParent.getPath();
+        mParent = getParentFile();
+        return mParent == null ? null : mParent.getPath();
     }
 
     public String getDocumentId() {
-        return mDocumentId;
+        return mTreeDocumentId;
     }
 
     public String getName() {
@@ -175,7 +161,7 @@ class DocFile {
     }
 
     public Uri getUri() {
-        return mUri;
+        return mDocumentUri;
     }
 
 
@@ -209,31 +195,31 @@ class DocFile {
     }
 
     public DocFile createFile(String fileName) throws IOException {
-        if (mUri == null) {
+        if (mDocumentUri == null) {
             return null;
         }
         String name = new File(fileName).getName();
-        Uri childUri = DocumentsContract.createDocument(mCr, mUri, MimeTypes.getMimeType(name), name);
+        Uri childUri = DocumentsContract.createDocument(mCr, mDocumentUri, MimeTypes.getMimeType(name), name);
         if (childUri != null) {
-            return new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, childUri);
+            return new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, this, childUri);
         }
         return null;
     }
 
     public DocFile createDirectory(String fileName) throws IOException {
-        if (mUri == null) {
+        if (mDocumentUri == null) {
             return null;
         }
         String name = new File(fileName).getName();
-        Uri childUri = DocumentsContract.createDocument(mCr, mUri, DocumentsContract.Document.MIME_TYPE_DIR, name);
+        Uri childUri = DocumentsContract.createDocument(mCr, mDocumentUri, DocumentsContract.Document.MIME_TYPE_DIR, name);
         if (childUri != null) {
-            return new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, childUri);
+            return new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, this, childUri);
         }
         return null;
     }
 
     public boolean delete() {
-        return DocFileUtilApi19.delete(mContext, mUri);
+        return DocFileUtilApi19.delete(mContext, mDocumentUri);
     }
 
     public boolean exists() {
@@ -241,7 +227,7 @@ class DocFile {
     }
 
     public List<DocFile> listFiles() {
-        Uri uri = DocumentsContract.buildChildDocumentsUriUsingTree(Uri.parse(mRootUri), mDocumentId);
+        Uri uri = DocumentsContract.buildChildDocumentsUriUsingTree(Uri.parse(mRootUri), mTreeDocumentId);
         Cursor childCursor = mContext.getContentResolver().query(uri, DOCUMENT_PROJECTION,
                 null, null, null);
         if (childCursor == null) {
@@ -251,7 +237,7 @@ class DocFile {
         try {
             while (childCursor.moveToNext()) {
                 String name = childCursor.getString(0);
-                subFiles.add(new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, childCursor));
+                subFiles.add(new DocFile(mContext, mPath + "/" + name, mRootPath, mRootUri, this, childCursor));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -262,17 +248,17 @@ class DocFile {
     }
 
     public boolean isRoot() {
-        return mParent == null;
+        return getParentFile() == null;
     }
 
     public boolean renameTo(String fileName) throws IOException {
         String name = new File(fileName).getName();
-        final Uri result = DocFileUtilApi21.renameTo(mContext, mUri, name);
+        final Uri result = DocFileUtilApi21.renameTo(mContext, mDocumentUri, name);
         if (result != null) {
-            mPath = getParent() + "./" + name;
+            mPath = getParent() + "/" + name;
             mName = name;
-            mDocumentId = DocumentsContract.getDocumentId(mUri);
-            mUri = result;
+            mTreeDocumentId = StorageUtil.path2TreeDocumentId(mPath, mRootPath, mRootUri);
+            mDocumentUri = result;
             return true;
         } else {
             return false;

@@ -143,17 +143,17 @@ public class StorageUtil {
         return file;
     }
 
-    public static String path2DocumentId(String path, String rootPath, String rootUri) {
-        String rootId = DocumentsContract.getTreeDocumentId(Uri.parse(rootUri));
+    public static String path2TreeDocumentId(String path, String rootPath, String rootTreeUri) {
+        String rootTreeId = DocumentsContract.getTreeDocumentId(Uri.parse(rootTreeUri));
         if (path.equals(rootPath)) {
-            return rootId;
+            return rootTreeId;
         }
         int startIndex = rootPath.length();
         if (!rootPath.endsWith("/")) {
             startIndex = startIndex + 1;
         }
         String relativePath = path.substring(startIndex);
-        return rootId + relativePath;
+        return rootTreeId + relativePath;
     }
 
     public static boolean hasWritePermission(Context context, int mountType) {

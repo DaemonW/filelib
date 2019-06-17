@@ -14,7 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public abstract class ExternalFile extends Filer {
+abstract class ExternalFile extends Filer {
     private static final String EXTERNAL_STORAGE_URI = "content://com.android.externalstorage.documents/tree/";
     protected File mRawFile;
     protected DocFile mSafFile;
@@ -73,7 +73,7 @@ public abstract class ExternalFile extends Filer {
             return false;
         }
         DocFile newSafFile = parent.createFile(mRawFile.getName());
-        if(newSafFile!=null){
+        if (newSafFile != null) {
             mSafFile = newSafFile;
             return true;
         }
@@ -163,10 +163,10 @@ public abstract class ExternalFile extends Filer {
         boolean exist = file.exists();
         if (!exist) {
             boolean success = createNewFile();
-            if(!success){
+            if (!success) {
                 throw new IOException();
             }
-            file=mSafFile;
+            file = mSafFile;
         }
         return (FileOutputStream) mContext.getContentResolver().openOutputStream(file.getUri());
     }

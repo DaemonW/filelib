@@ -3,7 +3,6 @@ package com.daemonw.file.core.model;
 import android.net.Uri;
 
 import com.daemonw.file.core.utils.IOUtil;
-import com.daemonw.file.core.utils.RawFileUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,7 +11,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
-public class InternalFile extends Filer {
+class InternalFile extends Filer {
     private File mFile;
 
     public InternalFile(String filePath) {

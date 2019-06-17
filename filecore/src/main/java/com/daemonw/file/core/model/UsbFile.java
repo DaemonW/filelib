@@ -6,7 +6,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UsbFile extends ExternalFile {
+class UsbFile extends ExternalFile {
 
     public UsbFile(Context context, String filePath, String rootPath, String rootUri) {
         super(context, filePath, rootPath, rootUri);

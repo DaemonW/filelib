@@ -3,26 +3,25 @@ package com.daemonw.file.core.model;
 import android.content.Context;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.support.v4.provider.DocumentFile;
 
+import com.daemonw.file.core.utils.IOUtil;
 import com.daemonw.file.core.utils.RawFileUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.List;
 
-public class ExternalFile extends Filer {
-    public static final String EXTERNAL_STORAGE_URI = "content://com.android.externalstorage.documents/tree/";
+public abstract class ExternalFile extends Filer {
+    private static final String EXTERNAL_STORAGE_URI = "content://com.android.externalstorage.documents/tree/";
+    protected File mRawFile;
+    protected DocFile mSafFile;
+    protected Context mContext;
+    protected String mRootPath;
+    protected String mRootUri;
 
-    private File mRawFile;
-    private DocFile mSafFile;
-    private Context mContext;
-    private String mRootPath;
-    private String mRootUri;
 
     public ExternalFile(Context context, String filePath, String rootPath, String rootUri) {
         mContext = context;
@@ -30,7 +29,6 @@ public class ExternalFile extends Filer {
         mRawFile = new File(filePath);
         mRootPath = rootPath;
         mRootUri = rootUri;
-        mType = TYPE_EXTERNAL;
     }
 
     public ExternalFile(Context context, File file, String rootPath, String rootUri) {
@@ -39,18 +37,17 @@ public class ExternalFile extends Filer {
         mRawFile = file;
         mRootPath = rootPath;
         mRootUri = rootUri;
-        mType = TYPE_EXTERNAL;
     }
 
-    private ExternalFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
+    public ExternalFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
         mContext = context;
         mRawFile = new File(filePath);
         mPath = mRawFile.getAbsolutePath();
         mRootPath = rootPath;
         mRootUri = rootUri;
         mSafFile = file;
-        mType = TYPE_EXTERNAL;
     }
+
 
     @Override
     public boolean delete() {
@@ -66,44 +63,68 @@ public class ExternalFile extends Filer {
     }
 
     @Override
-    public Filer createNewFile(String fileName) throws IOException {
-        String name = new File(fileName).getName();
+    public boolean createNewFile() throws IOException {
         if (canRawWrite()) {
-            File newRawFile = new File(mRawFile, name);
-            newRawFile.createNewFile();
-            return new ExternalFile(mContext, newRawFile, mRootPath, mRootUri);
+            return mRawFile.createNewFile();
         }
         DocFile file = getDocumentFile();
-        if (!file.exists()) {
-            return null;
+        DocFile parent = file.getParentFile();
+        if (!parent.exists()) {
+            return false;
         }
-        DocFile newSafFile = file.createFile(name);
-        if (newSafFile == null) {
-            return null;
+        DocFile newSafFile = parent.createFile(mRawFile.getName());
+        if(newSafFile!=null){
+            mSafFile = newSafFile;
+            return true;
         }
-        return new ExternalFile(mContext, mPath + "/" + name, mRootPath, mRootUri, newSafFile);
+        return false;
     }
 
     @Override
-    public Filer mkDir(String folderName) throws IOException {
-        String name = new File(folderName).getName();
+    public boolean mkChild(String name) throws IOException {
+        if (!exists() || isDirectory()) {
+            return false;
+        }
         if (canRawWrite()) {
-            File newFolder = new File(mRawFile, name);
-            boolean success = newFolder.mkdir();
-            if (!success) {
-                throw new IOException("create directory failed");
-            }
-            return new ExternalFile(mContext, newFolder, mRootPath, mRootUri);
+            return new File(mRawFile, name).mkdir();
         }
         DocFile file = getDocumentFile();
         if (!file.exists()) {
-            return null;
+            return false;
         }
-        DocFile newSafFolder = file.createDirectory(name);
-        if (newSafFolder == null) {
-            return null;
+        DocFile newSafFile = file.createDirectory(mRawFile.getName());
+        return newSafFile != null;
+    }
+
+    @Override
+    public boolean createChild(String name) throws IOException {
+        if (!exists() || isDirectory()) {
+            return false;
         }
-        return new ExternalFile(mContext, mPath + "/" + name, mRootPath, mRootUri, newSafFolder);
+        if (canRawWrite()) {
+            return new File(mRawFile, name).createNewFile();
+        }
+        DocFile file = getDocumentFile();
+        if (!file.exists()) {
+            return false;
+        }
+        DocFile newSafFile = file.createFile(mRawFile.getName());
+        return newSafFile != null;
+    }
+
+    @Override
+    public boolean mkDir() throws IOException {
+
+        if (canRawWrite()) {
+            return mRawFile.mkdir();
+        }
+        DocFile file = getDocumentFile();
+        DocFile parent = file.getParentFile();
+        if (!parent.exists()) {
+            return false;
+        }
+        DocFile newSafFolder = parent.createDirectory(mRawFile.getName());
+        return newSafFolder != null;
     }
 
     @Override
@@ -129,18 +150,6 @@ public class ExternalFile extends Filer {
     }
 
     @Override
-    public Filer getParentFile() {
-        if (canRawRead()) {
-            return new ExternalFile(mContext, mRawFile.getParentFile(), mRootPath, mRootUri);
-        }
-        DocFile file = getDocumentFile();
-        if (!file.exists()) {
-            return null;
-        }
-        return new ExternalFile(mContext, file.getParent(), mRootPath, mRootUri, file.getParentFile());
-    }
-
-    @Override
     public String getParentPath() {
         return getParentFile().mPath;
     }
@@ -151,8 +160,13 @@ public class ExternalFile extends Filer {
             return new FileOutputStream(mRawFile);
         }
         DocFile file = getDocumentFile();
-        if (!file.exists()) {
-            return null;
+        boolean exist = file.exists();
+        if (!exist) {
+            boolean success = createNewFile();
+            if(!success){
+                throw new IOException();
+            }
+            file=mSafFile;
         }
         return (FileOutputStream) mContext.getContentResolver().openOutputStream(file.getUri());
     }
@@ -164,7 +178,7 @@ public class ExternalFile extends Filer {
         }
         DocFile file = getDocumentFile();
         if (!file.exists()) {
-            return null;
+            throw new FileNotFoundException();
         }
         return (FileInputStream) mContext.getContentResolver().openInputStream(file.getUri());
     }
@@ -179,33 +193,6 @@ public class ExternalFile extends Filer {
             return false;
         }
         return file.isDirectory();
-    }
-
-    @Override
-    public ArrayList<Filer> listFiles() {
-        ArrayList<Filer> subFiles = new ArrayList<>();
-        if (canRawRead()) {
-            File[] subRaw = mRawFile.listFiles();
-            if (subRaw == null || subRaw.length <= 0) {
-                return subFiles;
-            }
-            for (File f : subRaw) {
-                subFiles.add(new ExternalFile(mContext, f, mRootPath, mRootUri));
-            }
-        } else {
-            DocFile file = getDocumentFile();
-            if (!file.exists()) {
-                return subFiles;
-            }
-            List<DocFile> subSaf = file.listFiles();
-            if (subSaf == null || subSaf.size() <= 0) {
-                return subFiles;
-            }
-            for (DocFile f : subSaf) {
-                subFiles.add(new ExternalFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f));
-            }
-        }
-        return subFiles;
     }
 
     @Override
@@ -231,18 +218,6 @@ public class ExternalFile extends Filer {
         return file.exists();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (o == null) {
-            return false;
-        }
-
-        if (!(o instanceof ExternalFile)) {
-            return false;
-        }
-        ExternalFile f = (ExternalFile) o;
-        return f.mPath.equals(mPath);
-    }
 
     @Override
     public long length() {
@@ -286,27 +261,23 @@ public class ExternalFile extends Filer {
         return file.exists();
     }
 
-    @Override
-    public boolean fillWithZero() throws IOException {
-        if (canRawWrite()) {
-            RandomAccessFile raf = new RandomAccessFile(mPath, "rw");
-            return RawFileUtil.fillWithZero(raf);
-        } else {
-            DocFile file = getDocumentFile();
-            if (!file.exists()) {
-                return false;
-            }
-            ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(file.getUri(), "rw");
-            return RawFileUtil.fillWithZero(pfd, length());
+
+    protected DocFile getDocumentFile() {
+        if (mSafFile != null) {
+            return mSafFile;
         }
+        DocFile file = new DocFile(mContext, mPath, mRootPath, mRootUri);
+        mSafFile = file;
+        return file;
     }
 
-    public boolean canRawWrite() {
-        return mRawFile.canWrite();
+
+    protected boolean canRawWrite() {
+        return mRawFile.getParentFile().canWrite();
     }
 
-    public boolean canRawRead() {
-        boolean canRead = mRawFile.canRead();
+    protected boolean canRawRead() {
+        boolean canRead = mRawFile.getParentFile().canRead();
         if (canRead) {
             return true;
         }
@@ -316,6 +287,58 @@ public class ExternalFile extends Filer {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+
+        if (!(o instanceof Filer)) {
+            return false;
+        }
+
+        Filer f = (Filer) o;
+        return f.mPath.equals(mPath) && f.getType() == getType();
+    }
+
+
+    @Override
+    public boolean erase() throws IOException {
+        if (canRawWrite()) {
+            RandomAccessFile raf = new RandomAccessFile(mPath, "rw");
+            return RawFileUtil.fillWithZero(raf);
+        } else {
+            DocFile file = getDocumentFile();
+            if (!file.exists()) {
+                return false;
+            }
+            ParcelFileDescriptor pfd = mContext.getContentResolver().openFileDescriptor(file.getUri(), "rw");
+            return fillWithZero(pfd, length());
+        }
+    }
+
+
+    private static boolean fillWithZero(ParcelFileDescriptor file, long length) {
+        boolean success = true;
+        ParcelFileDescriptor.AutoCloseOutputStream out = new ParcelFileDescriptor.AutoCloseOutputStream(file);
+        try {
+            byte[] buff = new byte[4096];
+            long left = length;
+            while (left >= buff.length) {
+                out.write(buff);
+                left -= buff.length;
+            }
+            out.write(buff, 0, (int) left);
+            out.getFD().sync();
+        } catch (IOException e) {
+            e.printStackTrace();
+            success = false;
+        } finally {
+            IOUtil.closeStream(out);
+        }
+        return success;
     }
 
 
@@ -338,14 +361,5 @@ public class ExternalFile extends Filer {
             return false;
         }
         return uriStr.startsWith(EXTERNAL_STORAGE_URI);
-    }
-
-    private DocFile getDocumentFile() {
-        if (mSafFile != null) {
-            return mSafFile;
-        }
-        DocFile file = new DocFile(mContext, mPath, mRootPath, mRootUri);
-        mSafFile = file;
-        return file;
     }
 }

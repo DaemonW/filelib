@@ -81,7 +81,7 @@ public class FileManagerActivity extends FileActivity {
                         String name = text.getText().toString();
                         if (!name.isEmpty()) {
                             try {
-                                getCurrent().mkDir(name);
+                                getCurrent().mkChild(name);
                                 refresh();
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -104,7 +104,7 @@ public class FileManagerActivity extends FileActivity {
                         String name = text.getText().toString();
                         if (!name.isEmpty()) {
                             try {
-                                getCurrent().createNewFile(name);
+                                getCurrent().createChild(name);
                                 refresh();
                             } catch (IOException e) {
                                 e.printStackTrace();

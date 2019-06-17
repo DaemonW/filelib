@@ -5,8 +5,6 @@ import com.daemonw.file.core.reflect.Volume;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 
 public abstract class Filer {
@@ -16,14 +14,17 @@ public abstract class Filer {
 
     protected boolean mChecked;
     protected String mPath;
-    protected int mType;
 
 
     public abstract boolean delete();
 
-    public abstract Filer createNewFile(String fileName) throws IOException;
+    public abstract boolean createNewFile() throws IOException;
 
-    public abstract Filer mkDir(String folderName) throws IOException;
+    public abstract boolean createChild(String name) throws IOException;
+
+    public abstract boolean mkChild(String name) throws IOException;
+
+    public abstract boolean mkDir() throws IOException;
 
     public abstract String getName();
 
@@ -55,11 +56,9 @@ public abstract class Filer {
 
     public abstract boolean exists();
 
-    public abstract boolean fillWithZero() throws IOException;
+    public abstract boolean erase() throws IOException;
 
-    public int getType() {
-        return mType;
-    }
+    public abstract int getType();
 
     public boolean isChecked() {
         return mChecked;

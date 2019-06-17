@@ -6,7 +6,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 
 import com.daemonw.file.core.model.Filer;
-import com.daemonw.file.core.model.HybirdFile;
+import com.daemonw.file.core.model.LocalFile;
 import com.daemonw.file.ui.R;
 import com.daemonw.widget.CommonAdapter;
 import com.daemonw.widget.ViewHolder;
@@ -34,7 +34,7 @@ class FileAdapter extends CommonAdapter<Filer> {
     public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType) {
         super(context, layoutResId, new ArrayList<Filer>());
         showFile = true;
-        mCurrent = new HybirdFile(context, rootPath, mountType);
+        mCurrent = new LocalFile(context, rootPath, mountType);
         List<Filer> files = mCurrent.listFiles();
         addFiles(sortFile(files));
     }
@@ -42,7 +42,7 @@ class FileAdapter extends CommonAdapter<Filer> {
     public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType, boolean showFile) {
         super(context, layoutResId, new ArrayList<Filer>());
         this.showFile = showFile;
-        mCurrent = new HybirdFile(context, rootPath, mountType);
+        mCurrent = new LocalFile(context, rootPath, mountType);
         List<Filer> files = mCurrent.listFiles();
         addFiles(sortFile(files));
     }

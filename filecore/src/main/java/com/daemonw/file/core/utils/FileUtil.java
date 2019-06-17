@@ -32,10 +32,10 @@ public class FileUtil {
             Filer dstFile = null;
             String name = srcFile.getName();
             if (!dstFolder.hasChild(name)) {
-                dstFile = dstFolder.createNewFile(name);
-            }
-            if (dstFile == null) {
-                return false;
+                boolean success = dstFolder.createChild(name);
+                if (!success) {
+                    return false;
+                }
             }
             in = srcFile.getInputStream();
             out = dstFile.getOutStream();
@@ -67,15 +67,15 @@ public class FileUtil {
         }
         boolean success = true;
         for (int i = 0; i < eraseCount; i++) {
-            success = success && fillWithZero(file);
+            success = success && erase(file);
         }
         success = success && file.delete();
         return success;
     }
 
-    public static boolean fillWithZero(Filer file) {
+    private static boolean erase(Filer file) {
         try {
-            return file.fillWithZero();
+            return file.erase();
         } catch (IOException e) {
             e.printStackTrace();
         }

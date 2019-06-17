@@ -6,30 +6,30 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UsbFile extends ExternalFile {
+public class SdFile extends ExternalFile {
 
-    public UsbFile(Context context, String filePath, String rootPath, String rootUri) {
+    public SdFile(Context context, String filePath, String rootPath, String rootUri) {
         super(context, filePath, rootPath, rootUri);
     }
 
-    public UsbFile(Context context, File file, String rootPath, String rootUri) {
+    public SdFile(Context context, File file, String rootPath, String rootUri) {
         super(context, file, rootPath, rootUri);
     }
 
-    public UsbFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
+    public SdFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
         super(context, filePath, rootPath, rootUri, file);
     }
 
     @Override
     public Filer getParentFile() {
         if (canRawRead()) {
-            return new UsbFile(mContext, mRawFile.getParentFile(), mRootPath, mRootUri);
+            return new SdFile(mContext, mRawFile.getParentFile(), mRootPath, mRootUri);
         }
         DocFile file = getDocumentFile();
         if (!file.exists()) {
             return null;
         }
-        return new UsbFile(mContext, file.getParent(), mRootPath, mRootUri, file.getParentFile());
+        return new SdFile(mContext, file.getParent(), mRootPath, mRootUri, file.getParentFile());
     }
 
     @Override
@@ -41,7 +41,7 @@ public class UsbFile extends ExternalFile {
                 return subFiles;
             }
             for (File f : subRaw) {
-                subFiles.add(new UsbFile(mContext, f, mRootPath, mRootUri));
+                subFiles.add(new SdFile(mContext, f, mRootPath, mRootUri));
             }
         } else {
             DocFile file = getDocumentFile();
@@ -53,7 +53,7 @@ public class UsbFile extends ExternalFile {
                 return subFiles;
             }
             for (DocFile f : subSaf) {
-                subFiles.add(new UsbFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f));
+                subFiles.add(new SdFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f));
             }
         }
         return subFiles;
@@ -61,6 +61,6 @@ public class UsbFile extends ExternalFile {
 
     @Override
     public int getType() {
-        return TYPE_USB;
+        return TYPE_EXTERNAL;
     }
 }

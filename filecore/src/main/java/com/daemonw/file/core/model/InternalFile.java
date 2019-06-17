@@ -2,29 +2,26 @@ package com.daemonw.file.core.model;
 
 import android.net.Uri;
 
+import com.daemonw.file.core.utils.IOUtil;
 import com.daemonw.file.core.utils.RawFileUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 
-public class RawFile extends Filer {
+public class InternalFile extends Filer {
     private File mFile;
 
-    public RawFile(String filePath) {
+    public InternalFile(String filePath) {
         mFile = new File(filePath);
-        mType = TYPE_INTERNAL;
         mPath = mFile.getAbsolutePath();
     }
 
-    private RawFile(File file) {
+    public InternalFile(File file) {
         mFile = file;
-        mType = TYPE_INTERNAL;
         mPath = mFile.getAbsolutePath();
     }
 
@@ -34,22 +31,29 @@ public class RawFile extends Filer {
     }
 
     @Override
-    public Filer createNewFile(String fileName) throws IOException {
-        String name = new File(fileName).getName();
-        File newFile = new File(mFile, name);
-        newFile.createNewFile();
-        return new RawFile(newFile);
+    public boolean createNewFile() throws IOException {
+        return mFile.createNewFile();
     }
 
     @Override
-    public Filer mkDir(String folderName) throws IOException {
-        String name = new File(folderName).getName();
-        File newFolder = new File(mFile, name);
-        boolean success = newFolder.mkdir();
-        if (!success) {
-            throw new IOException("create directory failed");
+    public boolean createChild(String name) throws IOException {
+        if(!mFile.exists()|| mFile.isDirectory()){
+            return false;
         }
-        return new RawFile(newFolder);
+        return new File(mFile, name).createNewFile();
+    }
+
+    @Override
+    public boolean mkChild(String name) throws IOException {
+        if(!mFile.exists()|| mFile.isDirectory()){
+            return false;
+        }
+        return new File(mFile, name).mkdir();
+    }
+
+    @Override
+    public boolean mkDir() throws IOException {
+        return mFile.mkdir();
     }
 
     @Override
@@ -69,7 +73,7 @@ public class RawFile extends Filer {
 
     @Override
     public Filer getParentFile() {
-        return new RawFile(mFile.getParentFile());
+        return new InternalFile(mFile.getParentFile());
     }
 
     @Override
@@ -100,7 +104,7 @@ public class RawFile extends Filer {
             return subFiles;
         }
         for (File f : sub) {
-            subFiles.add(new RawFile(f));
+            subFiles.add(new InternalFile(f));
         }
         return subFiles;
     }
@@ -122,10 +126,10 @@ public class RawFile extends Filer {
             return false;
         }
 
-        if (!(o instanceof RawFile)) {
+        if (!(o instanceof InternalFile)) {
             return false;
         }
-        RawFile f = (RawFile) o;
+        InternalFile f = (InternalFile) o;
         return f.mPath.equals(mPath);
     }
 
@@ -146,13 +150,17 @@ public class RawFile extends Filer {
     }
 
     @Override
-    public boolean fillWithZero() throws IOException {
+    public boolean erase() throws IOException {
         RandomAccessFile raf = new RandomAccessFile(mPath, "rw");
-        return RawFileUtil.fillWithZero(raf);
+        return fillWithZero(raf);
     }
 
+    @Override
+    public int getType() {
+        return TYPE_INTERNAL;
+    }
 
-    public static boolean rm(File f) {
+    private static boolean rm(File f) {
         if (f.isDirectory()) {
             File[] subFiles = f.listFiles();
             for (File subFile : subFiles) {
@@ -160,5 +168,25 @@ public class RawFile extends Filer {
             }
         }
         return f.delete();
+    }
+
+    private static boolean fillWithZero(RandomAccessFile file) {
+        boolean success = true;
+        try {
+            byte[] buff = new byte[4096];
+            long left = file.length();
+            while (left >= buff.length) {
+                file.write(buff);
+                left -= buff.length;
+            }
+            file.write(buff, 0, (int) left);
+            file.getFD().sync();
+        } catch (IOException e) {
+            e.printStackTrace();
+            success = false;
+        } finally {
+            IOUtil.closeStream(file);
+        }
+        return success;
     }
 }

@@ -1,6 +1,5 @@
 package com.daemonw.file.core.model;
 
-import android.app.Activity;
 import android.content.Context;
 
 import com.daemonw.file.core.reflect.Volume;
@@ -16,24 +15,24 @@ import java.util.List;
  * Created by daemonw on 4/13/18.
  */
 
-public class HybirdFile extends Filer {
+public class LocalFile extends Filer {
     private Filer fileDelegate;
     private Context mContext;
     private String rootPath;
     private String rootUri;
 
-    public HybirdFile(Activity context, String filePath, int type) {
+    public LocalFile(Context context, String filePath, int type) {
         mContext = context;
         switch (type) {
             case Filer.TYPE_INTERNAL:
-                fileDelegate = new RawFile(filePath);
+                fileDelegate = new InternalFile(filePath);
                 break;
             case Filer.TYPE_EXTERNAL:
                 Volume v1 = StorageUtil.getMountVolume(context, type);
                 if (v1 != null) {
                     rootPath = v1.mPath;
                     rootUri = StorageUtil.getMountUri(context, v1.mountType);
-                    fileDelegate = new ExternalFile(context, filePath, rootPath, rootUri);
+                    fileDelegate = new SdFile(context, filePath, rootPath, rootUri);
                 }
                 break;
             case Filer.TYPE_USB:
@@ -47,18 +46,18 @@ public class HybirdFile extends Filer {
         }
     }
 
-    public HybirdFile(Context context, String filePath) {
+    public LocalFile(Context context, String filePath) {
         mContext = context;
         Volume v = getMountPoint(filePath);
         if (v != null) {
             switch (v.mountType) {
                 case Filer.TYPE_INTERNAL:
-                    fileDelegate = new RawFile(filePath);
+                    fileDelegate = new InternalFile(filePath);
                     break;
                 case Filer.TYPE_EXTERNAL:
                     rootPath = v.mPath;
                     rootUri = StorageUtil.getMountUri(context, v.mountType);
-                    fileDelegate = new ExternalFile(context, filePath, rootPath, rootUri);
+                    fileDelegate = new SdFile(context, filePath, rootPath, rootUri);
                     break;
                 case Filer.TYPE_USB:
                     rootPath = v.mPath;
@@ -70,19 +69,29 @@ public class HybirdFile extends Filer {
     }
 
     @Override
-    public Filer createNewFile(String fileName) throws IOException {
+    public boolean createNewFile() throws IOException {
         if (fileDelegate == null) {
-            return null;
+            return false;
         }
-        return fileDelegate.createNewFile(fileName);
+        return fileDelegate.createNewFile();
     }
 
     @Override
-    public Filer mkDir(String folderName) throws IOException {
+    public boolean createChild(String name) throws IOException {
+        return fileDelegate.createChild(name);
+    }
+
+    @Override
+    public boolean mkChild(String name) throws IOException {
+        return fileDelegate.mkChild(name);
+    }
+
+    @Override
+    public boolean mkDir() throws IOException {
         if (fileDelegate == null) {
-            return null;
+            return false;
         }
-        return fileDelegate.mkDir(folderName);
+        return fileDelegate.mkDir();
     }
 
     @Override
@@ -164,19 +173,19 @@ public class HybirdFile extends Filer {
         if (o == null) {
             return false;
         }
-        if (!(o instanceof HybirdFile)) {
+        if (!(o instanceof LocalFile)) {
             return false;
         }
-        HybirdFile h = (HybirdFile) o;
+        LocalFile h = (LocalFile) o;
         return fileDelegate.equals(h.fileDelegate);
     }
 
     @Override
-    public boolean fillWithZero() throws IOException {
+    public boolean erase() throws IOException {
         if (fileDelegate == null) {
             return false;
         }
-        return fileDelegate.fillWithZero();
+        return fileDelegate.erase();
     }
 
     @Override
@@ -217,6 +226,11 @@ public class HybirdFile extends Filer {
             return false;
         }
         return fileDelegate.delete();
+    }
+
+    @Override
+    public int getType() {
+        return fileDelegate.getType();
     }
 
     private Volume getMountPoint(String filePath) {

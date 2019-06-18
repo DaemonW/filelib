@@ -190,7 +190,7 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
         icon.setImageResource(R.drawable.ic_folder);
         TextView name = v.findViewById(R.id.file_name);
         name.setText("...");
-        ViewGroup.LayoutParams lp=new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         v.setLayoutParams(lp);
         return v;
     }

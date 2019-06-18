@@ -36,7 +36,7 @@ class InternalFile extends Filer {
 
     @Override
     public boolean createChild(String name) throws IOException {
-        if(!mFile.exists()|| mFile.isDirectory()){
+        if (!mFile.exists() || mFile.isDirectory()) {
             return false;
         }
         return new File(mFile, name).createNewFile();
@@ -44,7 +44,7 @@ class InternalFile extends Filer {
 
     @Override
     public boolean mkChild(String name) throws IOException {
-        if(!mFile.exists()|| mFile.isDirectory()){
+        if (!mFile.exists() || mFile.isDirectory()) {
             return false;
         }
         return new File(mFile, name).mkdir();

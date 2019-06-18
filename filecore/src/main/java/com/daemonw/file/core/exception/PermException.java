@@ -10,7 +10,7 @@ public class PermException extends IOException {
 
     public PermException(String msg, int mountType) {
         super(msg);
-        this.mountType=mountType;
+        this.mountType = mountType;
     }
 
     public int getMountType() {

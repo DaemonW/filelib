@@ -22,8 +22,8 @@ import com.daemonw.file.core.utils.RxUtil;
 import com.daemonw.file.core.utils.StorageUtil;
 import com.daemonw.file.ui.R;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;
-import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.file.ui.adapter.VolumeAdapter;
+import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 

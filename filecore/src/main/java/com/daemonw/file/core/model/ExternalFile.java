@@ -82,7 +82,7 @@ abstract class ExternalFile extends Filer {
 
     @Override
     public boolean mkChild(String name) throws IOException {
-        if (!exists() || isDirectory()) {
+        if (!exists() || !isDirectory()) {
             return false;
         }
         if (canRawWrite()) {
@@ -92,13 +92,13 @@ abstract class ExternalFile extends Filer {
         if (!file.exists()) {
             return false;
         }
-        DocFile newSafFile = file.createDirectory(mRawFile.getName());
+        DocFile newSafFile = file.createDirectory(name);
         return newSafFile != null;
     }
 
     @Override
     public boolean createChild(String name) throws IOException {
-        if (!exists() || isDirectory()) {
+        if (!exists() || !isDirectory()) {
             return false;
         }
         if (canRawWrite()) {
@@ -108,7 +108,7 @@ abstract class ExternalFile extends Filer {
         if (!file.exists()) {
             return false;
         }
-        DocFile newSafFile = file.createFile(mRawFile.getName());
+        DocFile newSafFile = file.createFile(name);
         return newSafFile != null;
     }
 

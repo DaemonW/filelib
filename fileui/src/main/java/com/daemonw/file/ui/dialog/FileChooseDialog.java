@@ -3,8 +3,8 @@ package com.daemonw.file.ui.dialog;
 import android.app.Activity;
 import android.content.Intent;
 
-import com.daemonw.file.ui.activity.FileChooseActivity;
 import com.daemonw.file.ui.OnFileChooseListener;
+import com.daemonw.file.ui.activity.FileChooseActivity;
 
 public class FileChooseDialog {
     public static final int REQUEST_CHOOSE_FILE = 9041;

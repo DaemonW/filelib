@@ -16,14 +16,14 @@ import java.io.RandomAccessFile;
 
 abstract class ExternalFile extends Filer {
     private static final String EXTERNAL_STORAGE_URI = "content://com.android.externalstorage.documents/tree/";
-    protected File mRawFile;
-    protected DocFile mSafFile;
+    File mRawFile;
+    private DocFile mSafFile;
     protected Context mContext;
-    protected String mRootPath;
-    protected String mRootUri;
+    String mRootPath;
+    String mRootUri;
 
 
-    public ExternalFile(Context context, String filePath, String rootPath, String rootUri) {
+    ExternalFile(Context context, String filePath, String rootPath, String rootUri) {
         mContext = context;
         mPath = filePath;
         mRawFile = new File(filePath);
@@ -31,7 +31,7 @@ abstract class ExternalFile extends Filer {
         mRootUri = rootUri;
     }
 
-    public ExternalFile(Context context, File file, String rootPath, String rootUri) {
+    ExternalFile(Context context, File file, String rootPath, String rootUri) {
         mContext = context;
         mPath = file.getAbsolutePath();
         mRawFile = file;
@@ -39,7 +39,7 @@ abstract class ExternalFile extends Filer {
         mRootUri = rootUri;
     }
 
-    public ExternalFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
+    ExternalFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
         mContext = context;
         mRawFile = new File(filePath);
         mPath = mRawFile.getAbsolutePath();
@@ -262,7 +262,7 @@ abstract class ExternalFile extends Filer {
     }
 
 
-    protected DocFile getDocumentFile() {
+    DocFile getDocumentFile() {
         if (mSafFile != null) {
             return mSafFile;
         }
@@ -272,11 +272,11 @@ abstract class ExternalFile extends Filer {
     }
 
 
-    protected boolean canRawWrite() {
+    private boolean canRawWrite() {
         return mRawFile.getParentFile().canWrite();
     }
 
-    protected boolean canRawRead() {
+    boolean canRawRead() {
         boolean canRead = mRawFile.getParentFile().canRead();
         if (canRead) {
             return true;

@@ -14,12 +14,12 @@ import java.util.ArrayList;
 class InternalFile extends Filer {
     private File mFile;
 
-    public InternalFile(String filePath) {
+    InternalFile(String filePath) {
         mFile = new File(filePath);
         mPath = mFile.getAbsolutePath();
     }
 
-    public InternalFile(File file) {
+    InternalFile(File file) {
         mFile = file;
         mPath = mFile.getAbsolutePath();
     }

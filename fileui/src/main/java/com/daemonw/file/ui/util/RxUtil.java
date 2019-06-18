@@ -1,4 +1,4 @@
-package com.daemonw.file.core.utils;
+package com.daemonw.file.ui.util;
 
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;

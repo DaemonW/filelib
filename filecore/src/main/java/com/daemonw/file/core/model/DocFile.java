@@ -10,7 +10,6 @@ import android.text.TextUtils;
 import com.daemonw.file.core.utils.DocFileUtilApi19;
 import com.daemonw.file.core.utils.DocFileUtilApi21;
 import com.daemonw.file.core.utils.MimeTypes;
-import com.daemonw.file.core.utils.StorageUtil;
 
 import java.io.Closeable;
 import java.io.File;
@@ -44,7 +43,7 @@ class DocFile {
     private Uri mDocumentUri;
     private boolean mExist;
 
-    public DocFile(Context context, String filePath, String rootPath, String rootUri) {
+    DocFile(Context context, String filePath, String rootPath, String rootUri) {
         this(context, filePath, rootPath, rootUri, null);
         updateFileInfo();
     }
@@ -56,7 +55,7 @@ class DocFile {
         mRootPath = rootPath;
         mRootUri = rootUri;
         mParent = parent;
-        mTreeDocumentId = StorageUtil.path2TreeDocumentId(mPath, mRootPath, mRootUri);
+        mTreeDocumentId = path2TreeDocumentId(mPath, mRootPath, mRootUri);
     }
 
 
@@ -115,7 +114,7 @@ class DocFile {
         return mPath;
     }
 
-    public DocFile getParentFile() {
+    DocFile getParentFile() {
         if (mParent == null) {
             if (mPath.equals(mRootPath)) {
                 mParent = null;
@@ -194,7 +193,7 @@ class DocFile {
         return false;
     }
 
-    public DocFile createFile(String fileName) throws IOException {
+    DocFile createFile(String fileName) throws IOException {
         if (mDocumentUri == null) {
             return null;
         }
@@ -206,7 +205,7 @@ class DocFile {
         return null;
     }
 
-    public DocFile createDirectory(String fileName) throws IOException {
+    DocFile createDirectory(String fileName) throws IOException {
         if (mDocumentUri == null) {
             return null;
         }
@@ -251,13 +250,13 @@ class DocFile {
         return getParentFile() == null;
     }
 
-    public boolean renameTo(String fileName) throws IOException {
+    boolean renameTo(String fileName) throws IOException {
         String name = new File(fileName).getName();
         final Uri result = DocFileUtilApi21.renameTo(mContext, mDocumentUri, name);
         if (result != null) {
             mPath = getParent() + "/" + name;
             mName = name;
-            mTreeDocumentId = StorageUtil.path2TreeDocumentId(mPath, mRootPath, mRootUri);
+            mTreeDocumentId = path2TreeDocumentId(mPath, mRootPath, mRootUri);
             mDocumentUri = result;
             return true;
         } else {
@@ -273,5 +272,19 @@ class DocFile {
                 e.printStackTrace();
             }
         }
+    }
+
+
+    private String path2TreeDocumentId(String path, String rootPath, String rootTreeUri) {
+        String rootTreeId = DocumentsContract.getTreeDocumentId(Uri.parse(rootTreeUri));
+        if (path.equals(rootPath)) {
+            return rootTreeId;
+        }
+        int startIndex = rootPath.length();
+        if (!rootPath.endsWith("/")) {
+            startIndex = startIndex + 1;
+        }
+        String relativePath = path.substring(startIndex);
+        return rootTreeId + relativePath;
     }
 }

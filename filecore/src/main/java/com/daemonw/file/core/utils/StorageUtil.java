@@ -8,7 +8,6 @@ import android.os.Environment;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
-import android.provider.DocumentsContract;
 import android.support.v4.provider.DocumentFile;
 import android.text.TextUtils;
 import android.util.Log;
@@ -121,6 +120,9 @@ public class StorageUtil {
             return null;
         }
         DocumentFile rootFile = DocumentFile.fromTreeUri(context, Uri.parse(rootUri));
+        if (rootFile == null) {
+            return null;
+        }
         if (filePath.equals(rootPath)) {
             return rootFile;
         }
@@ -130,7 +132,7 @@ public class StorageUtil {
         }
         String relativePath = filePath.substring(startIndex);
         String[] pathSegments = relativePath.split("/");
-        if (pathSegments == null || pathSegments.length == 0) {
+        if (pathSegments.length == 0) {
             return rootFile;
         }
         DocumentFile file = rootFile;
@@ -141,19 +143,6 @@ public class StorageUtil {
             }
         }
         return file;
-    }
-
-    public static String path2TreeDocumentId(String path, String rootPath, String rootTreeUri) {
-        String rootTreeId = DocumentsContract.getTreeDocumentId(Uri.parse(rootTreeUri));
-        if (path.equals(rootPath)) {
-            return rootTreeId;
-        }
-        int startIndex = rootPath.length();
-        if (!rootPath.endsWith("/")) {
-            startIndex = startIndex + 1;
-        }
-        String relativePath = path.substring(startIndex);
-        return rootTreeId + relativePath;
     }
 
     public static boolean hasWritePermission(Context context, int mountType) {
@@ -173,11 +162,13 @@ public class StorageUtil {
         if (!isPersistedUri(context, mediaPath)) {
             return false;
         }
+
         DocumentFile file = DocumentFile.fromTreeUri(context, Uri.parse(mediaPath));
-        if (file.exists() && file.canWrite()) {
+        // if null, build sdk is under 21
+        if (file == null) {
             return true;
         }
-        return false;
+        return file.exists() && file.canWrite();
     }
 
     private static boolean isPersistedUri(Context context, String uri) {

@@ -22,7 +22,7 @@ import com.daemonw.file.core.exception.PermException;
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.PermissionUtil;
-import com.daemonw.file.core.utils.RxUtil;
+import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.file.core.utils.StorageUtil;
 import com.daemonw.file.ui.R;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;

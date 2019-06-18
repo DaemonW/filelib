@@ -16,7 +16,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 
 public class Volume {
-    public static final String LOG_TAG = Volume.class.getSimpleName();
+    private static final String LOG_TAG = Volume.class.getSimpleName();
     private static String INTERNAL_DESCRIPTION;
     private static String EXTERNAL_DESCRIPTION;
     private static String USB_DESCRIPTION;
@@ -102,10 +102,10 @@ public class Volume {
         //get type under android 6.0
         //judge by label
         String label = mDescription;
-        if (label.contains(USB_DESCRIPTION) || label.contains("U")) {
+        if (label.contains(USB_DESCRIPTION) || label.startsWith("U")) {
             return MOUNT_USB;
         }
-        if (label.contains(EXTERNAL_DESCRIPTION) || label.contains("SD")) {
+        if (label.contains(EXTERNAL_DESCRIPTION) || label.startsWith("SD")) {
             return MOUNT_EXTERNAL;
         }
 

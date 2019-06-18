@@ -22,9 +22,5 @@ android {
 
 dependencies {
     implementation 'com.orhanobut:logger:2.2.0'
-    implementation 'com.android.support:multidex:1.0.2'
-    implementation 'io.reactivex.rxjava2:rxjava:2.1.12'
-    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
-    implementation 'org.reactivestreams:reactive-streams:1.0.0'
     implementation 'com.android.support:appcompat-v7:'+supportLibraryVersion
 }

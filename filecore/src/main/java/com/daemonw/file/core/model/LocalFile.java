@@ -16,7 +16,7 @@ import java.util.List;
  */
 
 public class LocalFile extends Filer {
-    private Filer fileDelegate;
+    private Filer delegate;
     private Context mContext;
     private String rootPath;
     private String rootUri;
@@ -25,14 +25,14 @@ public class LocalFile extends Filer {
         mContext = context;
         switch (type) {
             case Filer.TYPE_INTERNAL:
-                fileDelegate = new InternalFile(filePath);
+                delegate = new InternalFile(filePath);
                 break;
             case Filer.TYPE_EXTERNAL:
                 Volume v1 = StorageUtil.getMountVolume(context, type);
                 if (v1 != null) {
                     rootPath = v1.mPath;
                     rootUri = StorageUtil.getMountUri(context, v1.mountType);
-                    fileDelegate = new SdFile(context, filePath, rootPath, rootUri);
+                    delegate = new SdFile(context, filePath, rootPath, rootUri);
                 }
                 break;
             case Filer.TYPE_USB:
@@ -40,7 +40,7 @@ public class LocalFile extends Filer {
                 if (v2 != null) {
                     rootPath = v2.mPath;
                     rootUri = StorageUtil.getMountUri(context, v2.mountType);
-                    fileDelegate = new UsbFile(context, filePath, rootPath, rootUri);
+                    delegate = new UsbFile(context, filePath, rootPath, rootUri);
                 }
                 break;
         }
@@ -52,17 +52,17 @@ public class LocalFile extends Filer {
         if (v != null) {
             switch (v.mountType) {
                 case Filer.TYPE_INTERNAL:
-                    fileDelegate = new InternalFile(filePath);
+                    delegate = new InternalFile(filePath);
                     break;
                 case Filer.TYPE_EXTERNAL:
                     rootPath = v.mPath;
                     rootUri = StorageUtil.getMountUri(context, v.mountType);
-                    fileDelegate = new SdFile(context, filePath, rootPath, rootUri);
+                    delegate = new SdFile(context, filePath, rootPath, rootUri);
                     break;
                 case Filer.TYPE_USB:
                     rootPath = v.mPath;
                     rootUri = StorageUtil.getMountUri(context, v.mountType);
-                    fileDelegate = new UsbFile(context, filePath, rootPath, rootUri);
+                    delegate = new UsbFile(context, filePath, rootPath, rootUri);
                     break;
             }
         }
@@ -70,102 +70,102 @@ public class LocalFile extends Filer {
 
     @Override
     public boolean createNewFile() throws IOException {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.createNewFile();
+        return delegate.createNewFile();
     }
 
     @Override
     public boolean createChild(String name) throws IOException {
-        return fileDelegate.createChild(name);
+        return delegate.createChild(name);
     }
 
     @Override
     public boolean mkChild(String name) throws IOException {
-        return fileDelegate.mkChild(name);
+        return delegate.mkChild(name);
     }
 
     @Override
     public boolean mkDir() throws IOException {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.mkDir();
+        return delegate.mkDir();
     }
 
     @Override
     public String getPath() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return null;
         }
-        return fileDelegate.getPath();
+        return delegate.getPath();
     }
 
     @Override
     public String getUri() {
-        return fileDelegate.getUri();
+        return delegate.getUri();
     }
 
     @Override
     public Filer getParentFile() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return null;
         }
-        return fileDelegate.getParentFile();
+        return delegate.getParentFile();
     }
 
     @Override
     public String getParentPath() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return null;
         }
-        return fileDelegate.getParentPath();
+        return delegate.getParentPath();
     }
 
     @Override
     public FileOutputStream getOutStream() throws IOException {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return null;
         }
-        return fileDelegate.getOutStream();
+        return delegate.getOutStream();
     }
 
     @Override
     public FileInputStream getInputStream() throws IOException {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return null;
         }
-        return fileDelegate.getInputStream();
+        return delegate.getInputStream();
     }
 
     @Override
     public boolean isDirectory() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.isDirectory();
+        return delegate.isDirectory();
     }
 
     @Override
     public ArrayList<Filer> listFiles() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return null;
         }
-        return fileDelegate.listFiles();
+        return delegate.listFiles();
     }
 
     @Override
     public long lastModified() {
-        return fileDelegate.lastModified();
+        return delegate.lastModified();
     }
 
     @Override
     public boolean hasChild(String fileName) {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.hasChild(fileName);
+        return delegate.hasChild(fileName);
     }
 
     @Override
@@ -177,60 +177,60 @@ public class LocalFile extends Filer {
             return false;
         }
         LocalFile h = (LocalFile) o;
-        return fileDelegate.equals(h.fileDelegate);
+        return delegate.equals(h.delegate);
     }
 
     @Override
     public boolean erase() throws IOException {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.erase();
+        return delegate.erase();
     }
 
     @Override
     public String getName() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return null;
         }
-        return fileDelegate.getName();
+        return delegate.getName();
     }
 
     @Override
     public long length() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return -1;
         }
-        return fileDelegate.length();
+        return delegate.length();
     }
 
     @Override
     public boolean renameTo(String fileName) {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.renameTo(fileName);
+        return delegate.renameTo(fileName);
     }
 
     @Override
     public boolean exists() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.exists();
+        return delegate.exists();
     }
 
     @Override
     public boolean delete() {
-        if (fileDelegate == null) {
+        if (delegate == null) {
             return false;
         }
-        return fileDelegate.delete();
+        return delegate.delete();
     }
 
     @Override
     public int getType() {
-        return fileDelegate.getType();
+        return delegate.getType();
     }
 
     private Volume getMountPoint(String filePath) {

@@ -3,20 +3,19 @@ package com.daemonw.file.core.model;
 import android.content.Context;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 class UsbFile extends ExternalFile {
 
-    public UsbFile(Context context, String filePath, String rootPath, String rootUri) {
+    UsbFile(Context context, String filePath, String rootPath, String rootUri) {
         super(context, filePath, rootPath, rootUri);
     }
 
-    public UsbFile(Context context, File file, String rootPath, String rootUri) {
+    private UsbFile(Context context, File file, String rootPath, String rootUri) {
         super(context, file, rootPath, rootUri);
     }
 
-    public UsbFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
+    private UsbFile(Context context, String filePath, String rootPath, String rootUri, DocFile file) {
         super(context, filePath, rootPath, rootUri, file);
     }
 
@@ -33,27 +32,30 @@ class UsbFile extends ExternalFile {
     }
 
     @Override
-    public ArrayList<Filer> listFiles() {
-        ArrayList<Filer> subFiles = new ArrayList<>();
+    public Filer[] listFiles() {
+        Filer[] subFiles = null;
         if (canRawRead()) {
             File[] subRaw = mRawFile.listFiles();
             if (subRaw == null || subRaw.length <= 0) {
-                return subFiles;
+                return null;
             }
-            for (File f : subRaw) {
-                subFiles.add(new UsbFile(mContext, f, mRootPath, mRootUri));
+            subFiles = new Filer[subRaw.length];
+            for (int i = 0; i < subRaw.length; i++) {
+                subFiles[i] = new UsbFile(mContext, subRaw[i], mRootPath, mRootUri);
             }
         } else {
             DocFile file = getDocumentFile();
             if (!file.exists()) {
-                return subFiles;
+                return null;
             }
             List<DocFile> subSaf = file.listFiles();
             if (subSaf == null || subSaf.size() <= 0) {
-                return subFiles;
+                return null;
             }
-            for (DocFile f : subSaf) {
-                subFiles.add(new UsbFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f));
+            subFiles = new Filer[subSaf.size()];
+            for (int i = 0; i < subSaf.size(); i++) {
+                DocFile f = subSaf.get(i);
+                subFiles[i] = new UsbFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f);
             }
         }
         return subFiles;

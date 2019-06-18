@@ -42,7 +42,7 @@ public abstract class Filer {
 
     public abstract boolean isDirectory();
 
-    public abstract ArrayList<Filer> listFiles();
+    public abstract Filer[] listFiles();
 
     public abstract long lastModified();
 

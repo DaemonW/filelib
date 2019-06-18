@@ -8,7 +8,6 @@ import com.daemonw.file.core.model.LocalFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 
 public class FileUtil {
 
@@ -54,8 +53,8 @@ public class FileUtil {
 
     public static boolean delete(Filer file, int eraseCount) {
         if (file.isDirectory()) {
-            ArrayList<Filer> subFile = file.listFiles();
-            if (subFile.size() > 0) {
+            Filer[] subFile = file.listFiles();
+            if (subFile != null && subFile.length > 0) {
                 for (Filer f : subFile) {
                     delete(f, eraseCount);
                 }

@@ -9,7 +9,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
 
 class InternalFile extends Filer {
     private File mFile;
@@ -96,14 +95,14 @@ class InternalFile extends Filer {
     }
 
     @Override
-    public ArrayList<Filer> listFiles() {
-        ArrayList<Filer> subFiles = new ArrayList<>();
+    public Filer[] listFiles() {
         File[] sub = mFile.listFiles();
         if (sub == null || sub.length <= 0) {
-            return subFiles;
+            return null;
         }
-        for (File f : sub) {
-            subFiles.add(new InternalFile(f));
+        Filer[] subFiles = new Filer[sub.length];
+        for (int i = 0; i < sub.length; i++) {
+            subFiles[i] = new InternalFile(sub[i]);
         }
         return subFiles;
     }

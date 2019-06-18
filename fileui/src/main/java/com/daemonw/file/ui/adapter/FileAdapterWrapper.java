@@ -142,7 +142,7 @@ public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
         mInnerAdapter.setOnItemClickListener(listener);
     }
 
-    public void update(List<Filer> fileList) {
+    public void update(Filer[] fileList) {
         mInnerAdapter.update(fileList);
         notifyDataSetChanged();
     }

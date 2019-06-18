@@ -148,7 +148,7 @@ public class LocalFile extends Filer {
     }
 
     @Override
-    public ArrayList<Filer> listFiles() {
+    public Filer[] listFiles() {
         if (delegate == null) {
             return null;
         }

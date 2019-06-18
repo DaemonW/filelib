@@ -13,11 +13,10 @@ import com.daemonw.widget.ViewHolder;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -35,7 +34,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         super(context, layoutResId, new ArrayList<Filer>());
         showFile = true;
         mCurrent = new LocalFile(context, rootPath, mountType);
-        List<Filer> files = mCurrent.listFiles();
+        Filer[] files = mCurrent.listFiles();
         addFiles(sortFile(files));
     }
 
@@ -43,7 +42,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         super(context, layoutResId, new ArrayList<Filer>());
         this.showFile = showFile;
         mCurrent = new LocalFile(context, rootPath, mountType);
-        List<Filer> files = mCurrent.listFiles();
+        Filer[] files = mCurrent.listFiles();
         addFiles(sortFile(files));
     }
 
@@ -85,7 +84,7 @@ class FileAdapter extends CommonAdapter<Filer> {
         }
     }
 
-    public void update(List<Filer> fileList) {
+    public void update(Filer[] fileList) {
         mDatas.clear();
         mSelected.clear();
         addFiles(sortFile(fileList));
@@ -135,13 +134,16 @@ class FileAdapter extends CommonAdapter<Filer> {
         mSelected.clear();
     }
 
-    private List<Filer> sortFile(List<Filer> fileList) {
-        Collections.sort(fileList, mFileComparator);
+    private Filer[] sortFile(Filer[] fileList) {
+        if (fileList == null) {
+            return null;
+        }
+        Arrays.sort(fileList, mFileComparator);
         return fileList;
     }
 
-    protected void addFiles(List<Filer> files) {
-        if (files == null || files.size() == 0) {
+    protected void addFiles(Filer[] files) {
+        if (files == null || files.length == 0) {
             return;
         }
         for (Filer file : files) {

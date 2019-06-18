@@ -33,27 +33,30 @@ class SdFile extends ExternalFile {
     }
 
     @Override
-    public ArrayList<Filer> listFiles() {
-        ArrayList<Filer> subFiles = new ArrayList<>();
+    public Filer[] listFiles() {
+        Filer[] subFiles = null;
         if (canRawRead()) {
             File[] subRaw = mRawFile.listFiles();
             if (subRaw == null || subRaw.length <= 0) {
-                return subFiles;
+                return null;
             }
-            for (File f : subRaw) {
-                subFiles.add(new SdFile(mContext, f, mRootPath, mRootUri));
+            subFiles = new Filer[subRaw.length];
+            for (int i = 0; i < subRaw.length; i++) {
+                subFiles[i] = new SdFile(mContext, subRaw[i], mRootPath, mRootUri);
             }
         } else {
             DocFile file = getDocumentFile();
             if (!file.exists()) {
-                return subFiles;
+                return null;
             }
             List<DocFile> subSaf = file.listFiles();
             if (subSaf == null || subSaf.size() <= 0) {
-                return subFiles;
+                return null;
             }
-            for (DocFile f : subSaf) {
-                subFiles.add(new SdFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f));
+            subFiles = new Filer[subSaf.size()];
+            for (int i = 0; i < subSaf.size(); i++) {
+                DocFile f = subSaf.get(i);
+                subFiles[i] = new SdFile(mContext, mPath + "/" + f.getName(), mRootPath, mRootUri, f);
             }
         }
         return subFiles;

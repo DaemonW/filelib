@@ -3,7 +3,6 @@ package com.daemonw.file.core.reflect;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.os.Build;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.preference.PreferenceManager;
@@ -22,13 +21,12 @@ public class Volume {
     private static String USB_DESCRIPTION;
 
     private Object storageVolume;
-    public int mStorageId;
     public String mPath;
     public int mountType;
     private String mState;
     public String mDescription;
-    public boolean mIsPrimary;
-    public boolean mIsRemovable;
+    private boolean mIsPrimary;
+    private boolean mIsRemovable;
 
     public static final int MOUNT_UNKNOWN = -1;
     public static final int MOUNT_INTERNAL = 0;
@@ -73,9 +71,6 @@ public class Volume {
         v.storageVolume = volume;
         File file = (File) ReflectUtil.getPrivateField(volume, "mPath");
         v.mPath = file.getAbsolutePath();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            v.mStorageId = (int) ReflectUtil.getPrivateField(volume, "mStorageId");
-        }
         v.mState = (String) ReflectUtil.getPrivateField(volume, "mState");
         v.mIsRemovable = (boolean) ReflectUtil.getPrivateField(volume, "mRemovable");
         v.mIsPrimary = (boolean) ReflectUtil.getPrivateField(volume, "mPrimary");

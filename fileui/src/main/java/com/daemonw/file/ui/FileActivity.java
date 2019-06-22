@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,6 +19,7 @@ import android.widget.Toast;
 import com.daemonw.file.FileConst;
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
+import com.daemonw.file.core.utils.MimeTypes;
 import com.daemonw.file.core.utils.PermissionUtil;
 import com.daemonw.file.core.utils.StorageUtil;
 import com.daemonw.file.ui.util.RxUtil;
@@ -24,6 +27,7 @@ import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 
+import java.io.File;
 import java.util.List;
 import java.util.Set;
 
@@ -39,7 +43,6 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     private Activity mContext;
     private RecyclerView mVolumeList;
     private RecyclerView mFileList;
-    private FileChooseActivity.OnFileChooseListener mOnFileSelectListener;
     private boolean isLoading = false;
     private boolean isShowVolume;
     private VolumeAdapter mVolumeAdapter;
@@ -118,7 +121,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
             updateToChild(file);
         } else {
             if (!mFileAdapter.isMultiSelect()) {
-                Toast.makeText(mContext, R.string.tip_choose_file, Toast.LENGTH_SHORT).show();
+                onFileOpen(file);
             }
         }
     }
@@ -157,6 +160,26 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
             return;
         }
         super.onBackPressed();
+    }
+
+    protected void onFileOpen(Filer file) {
+        Intent intent = null;
+        try {
+            Uri uri;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                String provider = getApplication().getPackageName() + ".FileProvider";
+                uri = FileProvider.getUriForFile(this, provider, new File(file.getPath()));
+            } else {
+                uri = Uri.parse(file.getUri());
+            }
+            intent = new Intent(Intent.ACTION_VIEW);
+            intent.addCategory(Intent.CATEGORY_DEFAULT);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setDataAndType(uri, MimeTypes.getMimeType(file.getName()));
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void showVolumeList() {

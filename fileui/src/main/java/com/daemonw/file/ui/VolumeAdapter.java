@@ -1,11 +1,10 @@
-package com.daemonw.file.ui.adapter;
+package com.daemonw.file.ui;
 
 import android.app.Activity;
 import android.content.Context;
 
 import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.daemonw.file.ui.R;
 import com.daemonw.widget.CommonAdapter;
 import com.daemonw.widget.ItemViewDelegate;
 import com.daemonw.widget.ViewHolder;

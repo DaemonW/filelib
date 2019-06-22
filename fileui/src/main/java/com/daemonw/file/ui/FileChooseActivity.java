@@ -1,9 +1,12 @@
-package com.daemonw.file.ui.dialog;
+package com.daemonw.file.ui;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
@@ -15,14 +18,11 @@ import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.daemonw.file.FileConst;
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
+import com.daemonw.file.core.utils.PermissionUtil;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.daemonw.file.ui.OnFileChooseListener;
-import com.daemonw.file.ui.R;
-import com.daemonw.file.ui.activity.GrantPermissionActivity;
-import com.daemonw.file.ui.adapter.FileAdapterWrapper;
-import com.daemonw.file.ui.adapter.VolumeAdapter;
 import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
@@ -38,8 +38,8 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
+class FileChooseActivity extends AppCompatActivity implements MultiItemTypeAdapter.OnItemClickListener {
 
-public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.OnItemClickListener {
     private Activity mContext;
     private RecyclerView mVolumeList;
     private RecyclerView mFileList;
@@ -50,33 +50,11 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
     private boolean isLoading = false;
     private VolumeAdapter mVolumeAdapter;
     private FileAdapterWrapper mFileAdapter;
-    private boolean showFile;
-
-    public FileChooseDialogInternal(Activity context) {
-        super(context);
-        mContext = context;
-        showFile = true;
-    }
-
-    public FileChooseDialogInternal(Activity context, boolean showFile) {
-        super(context);
-        mContext = context;
-        this.showFile = showFile;
-    }
-
-    public FileChooseDialogInternal(Activity context, int theme) {
-        super(context, theme);
-        mContext = context;
-        showFile = true;
-    }
-
-    public void setOnFileSelectListener(OnFileChooseListener onFileSelectListener) {
-        this.mOnFileSelectListener = onFileSelectListener;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mContext = this;
         setContentView(R.layout.file_select_dialog);
         mVolumeList = (RecyclerView) findViewById(R.id.volume_list);
         mFileList = (RecyclerView) findViewById(R.id.file_list);
@@ -84,6 +62,7 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         mCancelButton = (Button) findViewById(R.id.cancel);
         mBtnContainer = (RelativeLayout) findViewById(R.id.btn_container);
         init();
+        fixSize();
     }
 
     private void init() {
@@ -113,13 +92,13 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         mCancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dismiss();
+                finish();
             }
         });
         mConfirmButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dismiss();
+                finish();
                 if (mOnFileSelectListener != null) {
                     Set<Filer> selected = mFileAdapter.getSelected();
                     ArrayList<Filer> selectedFiles = new ArrayList<>(selected);
@@ -136,14 +115,10 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
             return null;
         }
         if (!StorageUtil.hasWritePermission(mContext, mountType)) {
-            //PermissionUtil.requestPermission(mContext, ((PermException) e).getMountType());
-            //Toast.makeText(mContext, R.string.warm_no_permission, Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(mContext, GrantPermissionActivity.class);
-            intent.putExtra("mount_point", mountType);
-            mContext.startActivity(intent);
+            PermissionUtil.requestPermission(mContext, mountType);
             return null;
         }
-        adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, showFile);
+        adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, false);
         adapter.setOnItemClickListener(this);
         adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
             @Override
@@ -179,9 +154,7 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
         return false;
     }
 
-    @Override
-    public void show() {
-        super.show();
+    public void fixSize() {
         WindowManager.LayoutParams wp = getWindow().getAttributes();
         if (wp == null) {
             return;
@@ -287,5 +260,31 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
                         isLoading = false;
                     }
                 }));
+    }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+        if (resultCode == Activity.RESULT_OK) {
+            Uri treeUri = resultData.getData();
+            if (treeUri == null) {
+                return;
+            }
+            getContentResolver().takePersistableUriPermission(treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+            if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+            } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
+            }
+        } else {
+            Toast.makeText(this, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    interface OnFileChooseListener {
+        void onFileSelect(List<Filer> selected);
     }
 }

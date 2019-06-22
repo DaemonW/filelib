@@ -1,4 +1,4 @@
-package com.daemonw.file.ui.adapter;
+package com.daemonw.file.ui;
 
 import android.app.Activity;
 import android.content.Context;
@@ -11,14 +11,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.daemonw.file.core.model.Filer;
-import com.daemonw.file.ui.R;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 import com.daemonw.widget.WrapperUtils;
 
 import java.util.Set;
 
-public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
+class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     private static final int BASE_ITEM_TYPE_HEADER = 100000;
 
     private SparseArrayCompat<View> mHeaderViews = new SparseArrayCompat<>();

@@ -1,4 +1,4 @@
-package com.daemonw.file.ui.activity;
+package com.daemonw.file.ui;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -6,10 +6,14 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 
@@ -18,9 +22,6 @@ import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.PermissionUtil;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.daemonw.file.ui.R;
-import com.daemonw.file.ui.adapter.FileAdapterWrapper;
-import com.daemonw.file.ui.adapter.VolumeAdapter;
 import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
@@ -35,28 +36,162 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
-public class FileActivity extends AppCompatActivity implements MultiItemTypeAdapter.OnItemClickListener {
-    private final static String LOG_TAG = FileActivity.class.getSimpleName();
+public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnItemClickListener, View.OnKeyListener {
 
-    private Activity mContext;
+    protected Activity mContext;
     private RecyclerView mVolumeList;
     private RecyclerView mFileList;
-    private FileChooseActivity.OnFileChooseListener mOnFileSelectListener;
     private boolean isLoading = false;
-    private boolean isShowVolume;
+    private boolean isVisible = false;
+    protected boolean isShowVolume;
     private VolumeAdapter mVolumeAdapter;
     private FileAdapterWrapper mFileAdapter;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mContext = this;
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.file_fragment, null);
+        return v;
+    }
+
+    @Override
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        mContext = getActivity();
         isShowVolume = true;
-        setContentView(R.layout.file_activity);
-        mVolumeList = (RecyclerView) findViewById(R.id.volume_list);
-        mFileList = (RecyclerView) findViewById(R.id.file_list);
+        mVolumeList = (RecyclerView) view.findViewById(R.id.volume_list);
+        mFileList = (RecyclerView) view.findViewById(R.id.file_list);
+        mFileList.setOnKeyListener(this);
         init();
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+        if (resultCode == Activity.RESULT_OK) {
+            Uri treeUri = resultData.getData();
+            if (treeUri == null) {
+                return;
+            }
+
+            getActivity().getContentResolver().takePersistableUriPermission(treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
+            if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
+            } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
+                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
+            }
+        } else {
+            Toast.makeText(mContext, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onItemClick(View view, ViewHolder holder, int position) {
+        Filer file = mFileAdapter.getItem(position);
+        if (file == null) {
+            return;
+        }
+        if (file.isDirectory()) {
+            updateToChild(file);
+        } else {
+            if (!mFileAdapter.isMultiSelect()) {
+                Toast.makeText(mContext, R.string.tip_choose_file, Toast.LENGTH_SHORT).show();
+            }
+        }
+        onFolderChanged();
+    }
+
+
+    @Override
+    public boolean onItemLongClick(View view, ViewHolder holder, int position) {
+        if (!mFileAdapter.isMultiSelect()) {
+            mFileAdapter.setMultiSelect(true);
+            mFileAdapter.notifyDataSetChanged();
+            return true;
+        }
+        return false;
+    }
+
+
+    @Override
+    public boolean onKey(View v, int keyCode, KeyEvent event) {
+        boolean handled = false;
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (!isVisible) {
+                return false;
+            }
+            if (isLoading) {
+                return true;
+            }
+            if (mFileAdapter != null) {
+
+                if (mFileAdapter.isMultiSelect()) {
+                    mFileAdapter.setMultiSelect(false);
+                    mFileAdapter.notifyDataSetChanged();
+                    return true;
+                }
+
+                if (!mFileAdapter.isRoot()) {
+                    updateToParent();
+                    onFolderChanged();
+                    return true;
+                }
+
+                if (isShowVolume) {
+                    return false;
+                } else {
+                    showVolumeList();
+                    onFolderChanged();
+                }
+
+                return true;
+            }
+        }
+        return handled;
+    }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) {
+            onVisible();
+        } else {
+            onInvisible();
+        }
+    }
+
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if (isVisibleToUser) {
+            onVisible();
+        } else {
+            onInvisible();
+        }
+    }
+
+    protected void onVisible() {
+        isVisible = true;
+        mVolumeAdapter.refresh();
+    }
+
+    protected void onInvisible() {
+        isVisible = false;
+    }
+
 
     private void init() {
         final List<Volume> volumes = StorageUtil.getVolumes(mContext);
@@ -73,6 +208,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
                     mFileList.setAdapter(mFileAdapter);
                     mFileList.setVisibility(View.VISIBLE);
                 }
+                onFolderChanged();
             }
 
             @Override
@@ -100,65 +236,17 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
             @Override
             public void onHeaderClicked() {
                 updateToParent();
+                onFolderChanged();
             }
         });
         return adapter;
     }
 
-    @Override
-    public void onItemClick(View view, ViewHolder holder, int position) {
-        Filer file = mFileAdapter.getItem(position);
-        if (file == null) {
-            return;
-        }
-        if (file.isDirectory()) {
-            updateToChild(file);
-        } else {
-            if (!mFileAdapter.isMultiSelect()) {
-                Toast.makeText(mContext, R.string.tip_choose_file, Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    @Override
-    public boolean onItemLongClick(View view, ViewHolder holder, int position) {
-        if (!mFileAdapter.isMultiSelect()) {
-            mFileAdapter.setMultiSelect(true);
-            mFileAdapter.notifyDataSetChanged();
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (mFileAdapter != null) {
-
-            if (mFileAdapter.isMultiSelect()) {
-                mFileAdapter.setMultiSelect(false);
-                mFileAdapter.notifyDataSetChanged();
-                return;
-            }
-
-            if (!mFileAdapter.isRoot()) {
-                updateToParent();
-                return;
-            }
-
-            if (isShowVolume) {
-                super.onBackPressed();
-            } else {
-                showVolumeList();
-            }
-
-            return;
-        }
-        super.onBackPressed();
-    }
 
     public void showVolumeList() {
         isShowVolume = true;
         mFileList.setVisibility(View.GONE);
+        mVolumeAdapter.refresh();
         mVolumeList.setVisibility(View.VISIBLE);
     }
 
@@ -257,36 +345,8 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     }
 
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
-        if (resultCode == Activity.RESULT_OK) {
-            Uri treeUri = resultData.getData();
-            if (treeUri == null) {
-                return;
-            }
-            getContentResolver().takePersistableUriPermission(treeUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-            if (requestCode == FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION) {
-                sp.edit().putString(FileConst.PREF_EXTERNAL_URI, treeUri.toString()).apply();
-            } else if (requestCode == FileConst.REQUEST_GRANT_USB_PERMISSION) {
-                sp.edit().putString(FileConst.PREF_USB_URI, treeUri.toString()).apply();
-            }
-        } else {
-            Toast.makeText(this, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
-        }
-    }
+    protected void onFolderChanged() {
 
-    interface OnFileChooseListener {
-        void onFileSelect(List<Filer> selected);
-    }
-
-    protected void switchVolume(int mountPoint) {
-        mFileAdapter = getFileAdapter(mountPoint);
-        if (mFileAdapter != null) {
-            mFileList.setAdapter(mFileAdapter);
-        }
     }
 
     protected Set<Filer> getSelected() {
@@ -295,6 +355,10 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
 
     protected Filer getCurrent() {
         return mFileAdapter.getCurrent();
+    }
+
+    protected void disableSelectMode() {
+        mFileAdapter.setMultiSelect(false);
     }
 
     protected void refresh() {

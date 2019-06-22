@@ -9,7 +9,7 @@ import android.widget.EditText;
 
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.utils.FileUtil;
-import com.daemonw.file.ui.activity.FileActivity;
+import com.daemonw.file.ui.FileActivity;
 
 import java.io.IOException;
 import java.util.ArrayList;

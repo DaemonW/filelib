@@ -1,4 +1,4 @@
-package com.daemonw.file.ui.activity;
+package com.daemonw.file.ui;
 
 import android.app.Activity;
 import android.content.Intent;

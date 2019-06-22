@@ -2,10 +2,10 @@
     package="com.daemonw.file.ui">
 
     <application>
-        <activity android:name="com.daemonw.file.ui.activity.FileActivity" />
-        <activity android:name="com.daemonw.file.ui.activity.GrantPermissionActivity" />
+        <activity android:name="com.daemonw.file.ui.FileActivity" />
+        <activity android:name="com.daemonw.file.ui.GrantPermissionActivity" />
         <activity
-            android:name="com.daemonw.file.ui.activity.FileChooseActivity"
+            android:name="com.daemonw.file.ui.FileChooseActivity"
             android:theme="@style/FileChooseDialogTheme" />
     </application>
 </manifest>

@@ -32,7 +32,7 @@ public class FileUtil {
         InputStream in = null;
         try {
             String name = srcFile.getName();
-            Filer dstFile = new LocalFile(context, dstFolder + "/" + name, dstFolder.getType());
+            Filer dstFile = new LocalFile(context, dstFolder.getPath() + "/" + name, dstFolder.getType());
             if (!dstFile.exists()) {
                 boolean success = dstFile.createNewFile();
                 if (!success) {

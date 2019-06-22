@@ -8,7 +8,8 @@
     <string name="cancel">取消</string>
     <string name="create_folder">创建文件夹</string>
     <string name="create_file">创建文件</string>
-
+    <string name="choose_folder">选择文件夹</string>
+    <string name="choose_file">选择文件</string>
     <string name="action_mkdir">新建文件夹</string>
     <string name="action_mkfile">新建文件</string>
     <string name="action_delete">删除</string>

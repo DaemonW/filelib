@@ -18,6 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_toEndOf="@+id/file_icon"
+        android:layout_toStartOf="@+id/file_check"
         android:ellipsize="end"
         android:singleLine="true"
         android:textSize="18sp" />
@@ -28,6 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/file_name"
         android:layout_toEndOf="@+id/file_icon"
+        android:layout_toStartOf="@+id/file_check"
         android:singleLine="true"
         android:textSize="14sp" />
 

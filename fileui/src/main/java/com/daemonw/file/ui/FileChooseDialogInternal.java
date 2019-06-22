@@ -13,6 +13,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.daemonw.file.core.model.Filer;
@@ -41,6 +42,7 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
     private Button mConfirmButton;
     private Button mCancelButton;
     private RelativeLayout mBtnContainer;
+    private TextView mDlgTitle;
     private OnFileChooseListener mOnFileSelectListener;
     private boolean isLoading = false;
     private VolumeAdapter mVolumeAdapter;
@@ -78,6 +80,7 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
         mConfirmButton = (Button) findViewById(R.id.confirm);
         mCancelButton = (Button) findViewById(R.id.cancel);
         mBtnContainer = (RelativeLayout) findViewById(R.id.btn_container);
+        mDlgTitle = (TextView) findViewById(R.id.dlg_title);
         init();
     }
 
@@ -122,6 +125,11 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
                 }
             }
         });
+        if(showFile){
+            mDlgTitle.setText(R.string.choose_file);
+        }else{
+            mDlgTitle.setText(R.string.choose_folder);
+        }
     }
 
     private FileAdapterWrapper getFileAdapter(int mountType) {

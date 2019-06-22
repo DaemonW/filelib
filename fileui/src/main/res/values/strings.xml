@@ -7,7 +7,8 @@
     <string name="cancel">cancel</string>
     <string name="create_folder">Create Folder</string>
     <string name="create_file">Create File</string>
-
+    <string name="choose_folder">Choose Folder</string>
+    <string name="choose_file">Choose File</string>
     <string name="action_mkdir">New Folder</string>
     <string name="action_mkfile">New File</string>
     <string name="action_delete">Delete</string>

@@ -92,7 +92,7 @@ class FileAdapter extends CommonAdapter<Filer> {
             checkBox.setVisibility(View.VISIBLE);
         } else {
             checkBox.setChecked(false);
-            checkBox.setVisibility(View.GONE);
+            checkBox.setVisibility(View.INVISIBLE);
         }
     }
 

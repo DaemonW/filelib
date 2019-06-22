@@ -14,8 +14,13 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.ui.FileChooseDialog;
+import com.daemonw.file.ui.OnFileChooseListener;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     TextView textView;
@@ -31,6 +36,15 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener((v) -> {
             //PermissionUtil.requestPermission(MainActivity.this, Volume.MOUNT_USB);
             FileChooseDialog dialog = new FileChooseDialog(this);
+            dialog.setOnFileSelectListener(new OnFileChooseListener() {
+                @Override
+                public void onFileSelect(List<Filer> selected) {
+                    if (selected == null || selected.size() == 0) {
+                        return;
+                    }
+                    Toast.makeText(MainActivity.this, "select: " +selected.get(0).getPath(),Toast.LENGTH_SHORT).show();
+                }
+            });
             dialog.show();
         });
         init();

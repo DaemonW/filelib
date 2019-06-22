@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -75,12 +76,12 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.file_select_dialog);
-        mVolumeList = (RecyclerView) findViewById(R.id.volume_list);
-        mFileList = (RecyclerView) findViewById(R.id.file_list);
-        mConfirmButton = (Button) findViewById(R.id.confirm);
-        mCancelButton = (Button) findViewById(R.id.cancel);
-        mBtnContainer = (RelativeLayout) findViewById(R.id.btn_container);
-        mDlgTitle = (TextView) findViewById(R.id.dlg_title);
+        mVolumeList = findViewById(R.id.volume_list);
+        mFileList = findViewById(R.id.file_list);
+        mConfirmButton = findViewById(R.id.confirm);
+        mCancelButton = findViewById(R.id.cancel);
+        mBtnContainer = findViewById(R.id.btn_container);
+        mDlgTitle = findViewById(R.id.dlg_title);
         init();
     }
 
@@ -125,9 +126,9 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
                 }
             }
         });
-        if(showFile){
+        if (showFile) {
             mDlgTitle.setText(R.string.choose_file);
-        }else{
+        } else {
             mDlgTitle.setText(R.string.choose_folder);
         }
     }
@@ -163,6 +164,11 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
         if (file == null) {
             return;
         }
+        if (mFileAdapter.isMultiSelect()) {
+            CheckBox checkBox = holder.getView(R.id.file_check);
+            checkBox.setChecked(!checkBox.isChecked());
+            return;
+        }
         if (file.isDirectory()) {
             updateToChild(file);
         } else {
@@ -177,9 +183,9 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
         if (!mFileAdapter.isMultiSelect()) {
             mFileAdapter.setMultiSelect(true);
             mFileAdapter.notifyDataSetChanged();
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -199,69 +205,35 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
     }
 
     public void updateToParent() {
-        if (isLoading) {
-            return;
-        }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(1)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object obj) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Integer, Boolean>() {
-                    @Override
-                    public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapter.updateToParent();
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+        showLoadingWhenOperate(new FileOperator() {
+            @Override
+            public void operate() {
+                mFileAdapter.updateToParent();
+            }
+        });
     }
 
-    public void updateToChild(Filer file) {
-        if (isLoading) {
-            return;
-        }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(file)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Filer, Boolean>() {
-                    @Override
-                    public Boolean apply(Filer localFile) throws Exception {
-                        mFileAdapter.updateToChild(localFile);
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+    public void updateToChild(final Filer file) {
+        showLoadingWhenOperate(new FileOperator() {
+            @Override
+            public void operate() {
+                mFileAdapter.updateToChild(file);
+            }
+        });
     }
 
 
     public void updateCurrent() {
+        showLoadingWhenOperate(new FileOperator() {
+            @Override
+            public void operate() {
+                mFileAdapter.updateCurrent();
+            }
+        });
+    }
+
+
+    private void showLoadingWhenOperate(final FileOperator operator) {
         if (isLoading) {
             return;
         }
@@ -278,7 +250,7 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
                 .map(new Function<Integer, Boolean>() {
                     @Override
                     public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapter.updateCurrent();
+                        operator.operate();
                         return true;
                     }
                 }).observeOn(AndroidSchedulers.mainThread())

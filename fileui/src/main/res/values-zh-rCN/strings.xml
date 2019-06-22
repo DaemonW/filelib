@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="warn_grant_perm">点击存储空间进行授权</string>
-    <string name="tip_choose_file">长按文件激活选择模式</string>
+    <string name="tip_choose_file">长按文件进行选择</string>
     <string name="warm_no_permission">您需要先获取访问权限</string>
 
     <string name="confirm">确认</string>

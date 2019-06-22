@@ -1,10 +1,10 @@
 <resources>
     <string name="warn_grant_perm">you need choose the volume to grant permission</string>
-    <string name="tip_choose_file">long click item to enable select mode</string>
+    <string name="tip_choose_file">long click file to select</string>
     <string name="warm_no_permission">you need to grant the permission first</string>
 
-    <string name="confirm">ok</string>
-    <string name="cancel">cancel</string>
+    <string name="confirm">OK</string>
+    <string name="cancel">Cancel</string>
     <string name="create_folder">Create Folder</string>
     <string name="create_file">Create File</string>
     <string name="choose_folder">Choose Folder</string>

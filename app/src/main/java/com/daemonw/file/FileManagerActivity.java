@@ -17,6 +17,7 @@ import java.util.List;
 
 public class FileManagerActivity extends FileActivity {
     private List<Filer> mChoosed = new ArrayList<>();
+    private boolean isCut;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -45,15 +46,21 @@ public class FileManagerActivity extends FileActivity {
             case R.id.action_copy:
                 mChoosed.clear();
                 mChoosed.addAll(getSelected());
+                isCut = false;
                 break;
             case R.id.action_cut:
                 mChoosed.clear();
                 mChoosed.addAll(getSelected());
+                isCut = true;
                 break;
             case R.id.action_paste:
                 for (Filer f : mChoosed) {
-                    FileUtil.copyFile(this,f, getCurrent());
+                    FileUtil.copyFile(this, f, getCurrent());
+                    if (isCut) {
+                        f.delete();
+                    }
                 }
+                isCut = false;
                 break;
             default:
                 break;

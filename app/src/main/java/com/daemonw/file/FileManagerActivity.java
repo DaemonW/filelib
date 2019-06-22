@@ -51,6 +51,9 @@ public class FileManagerActivity extends FileActivity {
                 mChoosed.addAll(getSelected());
                 break;
             case R.id.action_paste:
+                for (Filer f : mChoosed) {
+                    FileUtil.copyFile(this,f, getCurrent());
+                }
                 break;
             default:
                 break;

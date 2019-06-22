@@ -18,15 +18,14 @@ import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.daemonw.file.FileConst;
-import com.daemonw.file.core.exception.PermException;
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.PermissionUtil;
-import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.file.core.utils.StorageUtil;
 import com.daemonw.file.ui.R;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;
 import com.daemonw.file.ui.adapter.VolumeAdapter;
+import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
@@ -226,23 +225,23 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
 
     private FileAdapterWrapper getFileAdapter(int mountType) {
         FileAdapterWrapper adapter = null;
-        try {
-            String rootPath = StorageUtil.getMountPath(mContext, mountType);
-            if (rootPath == null) {
-                return null;
-            }
-            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, true);
-            adapter.setOnItemClickListener(this);
-            adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
-                @Override
-                public void onHeaderClicked() {
-                    updateToParent();
-                    onFolderChanged();
-                }
-            });
-        } catch (PermException e) {
-            PermissionUtil.requestPermission(mContext, ((PermException) e).getMountType());
+        String rootPath = StorageUtil.getMountPath(mContext, mountType);
+        if (rootPath == null) {
+            return null;
         }
+        if (!StorageUtil.hasWritePermission(mContext, mountType)) {
+            PermissionUtil.requestPermission(mContext, mountType);
+            return null;
+        }
+        adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, true);
+        adapter.setOnItemClickListener(this);
+        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+            @Override
+            public void onHeaderClicked() {
+                updateToParent();
+                onFolderChanged();
+            }
+        });
         return adapter;
     }
 

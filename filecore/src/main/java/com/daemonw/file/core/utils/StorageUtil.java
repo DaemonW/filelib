@@ -13,7 +13,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.daemonw.file.FileConst;
-import com.daemonw.file.core.exception.PermException;
 import com.daemonw.file.core.reflect.Volume;
 import com.orhanobut.logger.Logger;
 
@@ -73,15 +72,12 @@ public class StorageUtil {
     }
 
 
-    public static String getMountPath(Context context, int mountPoint) throws PermException {
+    public static String getMountPath(Context context, int mountPoint) {
         List<Volume> volumes = StorageUtil.getVolumes(context);
         String rootPath = null;
         for (Volume v : volumes) {
             if (v.mountType != mountPoint) {
                 continue;
-            }
-            if (!StorageUtil.hasWritePermission(context, v.mountType)) {
-                throw new PermException(getPermMessage(v.mountType), v.mountType);
             }
             rootPath = v.mPath;
         }

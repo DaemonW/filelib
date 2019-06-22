@@ -15,16 +15,15 @@ import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.daemonw.file.core.exception.PermException;
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
-import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.file.core.utils.StorageUtil;
 import com.daemonw.file.ui.OnFileChooseListener;
 import com.daemonw.file.ui.R;
 import com.daemonw.file.ui.activity.GrantPermissionActivity;
 import com.daemonw.file.ui.adapter.FileAdapterWrapper;
 import com.daemonw.file.ui.adapter.VolumeAdapter;
+import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
@@ -132,26 +131,26 @@ public class FileChooseDialogInternal extends Dialog implements MultiItemTypeAda
 
     private FileAdapterWrapper getFileAdapter(int mountType) {
         FileAdapterWrapper adapter = null;
-        try {
-            String rootPath = StorageUtil.getMountPath(mContext, mountType);
-            if (rootPath == null) {
-                return null;
-            }
-            adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, showFile);
-            adapter.setOnItemClickListener(this);
-            adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
-                @Override
-                public void onHeaderClicked() {
-                    updateToParent();
-                }
-            });
-        } catch (PermException e) {
+        String rootPath = StorageUtil.getMountPath(mContext, mountType);
+        if (rootPath == null) {
+            return null;
+        }
+        if (!StorageUtil.hasWritePermission(mContext, mountType)) {
             //PermissionUtil.requestPermission(mContext, ((PermException) e).getMountType());
             //Toast.makeText(mContext, R.string.warm_no_permission, Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(mContext, GrantPermissionActivity.class);
-            intent.putExtra("mount_point", e.getMountType());
+            intent.putExtra("mount_point", mountType);
             mContext.startActivity(intent);
+            return null;
         }
+        adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, showFile);
+        adapter.setOnItemClickListener(this);
+        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+            @Override
+            public void onHeaderClicked() {
+                updateToParent();
+            }
+        });
         return adapter;
     }
 

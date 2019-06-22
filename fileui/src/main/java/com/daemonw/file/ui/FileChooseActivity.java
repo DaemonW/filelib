@@ -103,7 +103,7 @@ class FileChooseActivity extends AppCompatActivity implements MultiItemTypeAdapt
                 if (mOnFileSelectListener != null) {
                     Set<Filer> selected = mFileAdapter.getSelected();
                     ArrayList<Filer> selectedFiles = new ArrayList<>(selected);
-                    mOnFileSelectListener.onFileSelect(selectedFiles);
+                    mOnFileSelectListener.onChooseFile(selectedFiles);
                 }
             }
         });
@@ -253,9 +253,5 @@ class FileChooseActivity extends AppCompatActivity implements MultiItemTypeAdapt
         } else {
             Toast.makeText(this, R.string.warn_grant_perm, Toast.LENGTH_SHORT).show();
         }
-    }
-
-    interface OnFileChooseListener {
-        void onFileSelect(List<Filer> selected);
     }
 }

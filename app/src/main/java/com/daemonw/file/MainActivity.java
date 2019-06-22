@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
             FileChooseDialog dialog = new FileChooseDialog(this);
             dialog.setOnFileSelectListener(new OnFileChooseListener() {
                 @Override
-                public void onFileSelect(List<Filer> selected) {
+                public void onChooseFile(List<Filer> selected) {
                     if (selected == null || selected.size() == 0) {
                         return;
                     }

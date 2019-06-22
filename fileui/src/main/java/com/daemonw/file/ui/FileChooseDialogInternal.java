@@ -122,7 +122,7 @@ class FileChooseDialogInternal extends Dialog implements MultiItemTypeAdapter.On
                 if (mOnFileSelectListener != null) {
                     Set<Filer> selected = mFileAdapter.getSelected();
                     ArrayList<Filer> selectedFiles = new ArrayList<>(selected);
-                    mOnFileSelectListener.onFileSelect(selectedFiles);
+                    mOnFileSelectListener.onChooseFile(selectedFiles);
                 }
             }
         });

@@ -9,6 +9,7 @@ import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.model.LocalFile;
 import com.daemonw.file.ui.R;
 import com.daemonw.widget.CommonAdapter;
+import com.daemonw.widget.ItemViewDelegate;
 import com.daemonw.widget.ViewHolder;
 
 import java.text.SimpleDateFormat;
@@ -31,19 +32,31 @@ class FileAdapter extends CommonAdapter<Filer> {
     private static SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd hh:mm:ss", Locale.getDefault());
 
     public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType) {
-        super(context, layoutResId, new ArrayList<Filer>());
-        showFile = true;
-        mCurrent = new LocalFile(context, rootPath, mountType);
-        Filer[] files = mCurrent.listFiles();
-        addFiles(sortFile(files));
+        this(context,layoutResId,rootPath,mountType,true);
     }
 
-    public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType, boolean showFile) {
+    public FileAdapter(Activity context, final int layoutResId, String rootPath, int mountType, boolean showFile) {
         super(context, layoutResId, new ArrayList<Filer>());
         this.showFile = showFile;
         mCurrent = new LocalFile(context, rootPath, mountType);
         Filer[] files = mCurrent.listFiles();
         addFiles(sortFile(files));
+        addItemViewDelegate(new ItemViewDelegate<Filer>() {
+            @Override
+            public int getItemViewLayoutId() {
+                return layoutResId;
+            }
+
+            @Override
+            public boolean isMatchedType(Filer item, int position) {
+                return true;
+            }
+
+            @Override
+            public void convert(ViewHolder holder, Filer filer, int position) {
+                FileAdapter.this.convert(holder,filer,position);
+            }
+        });
     }
 
     public void setMultiSelect(boolean enable) {

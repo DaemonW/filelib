@@ -16,7 +16,6 @@ import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 import com.daemonw.widget.WrapperUtils;
 
-import java.util.List;
 import java.util.Set;
 
 public class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {

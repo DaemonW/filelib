@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.daemonw.file.core.utils.DocFileUtilApi19;
 import com.daemonw.file.core.utils.DocFileUtilApi21;
@@ -86,13 +87,14 @@ class DocFile {
         if (mDocumentUri == null) {
             mDocumentUri = DocumentsContract.buildDocumentUriUsingTree(Uri.parse(mRootUri), mTreeDocumentId);
         }
-        Cursor cursor = mContext.getContentResolver().query(mDocumentUri, DOCUMENT_PROJECTION,
-                null, null, null);
-        if (cursor == null) {
-            mExist = false;
-            return;
-        }
+        Cursor cursor = null;
         try {
+            cursor = mContext.getContentResolver().query(mDocumentUri, DOCUMENT_PROJECTION,
+                    null, null, null);
+            if (cursor == null) {
+                mExist = false;
+                return;
+            }
             if (cursor.moveToNext()) {
                 mExist = true;
                 mName = cursor.getString(0);
@@ -104,7 +106,7 @@ class DocFile {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("daemonw", "error: " + e.getMessage());
         } finally {
             closeQuietly(cursor);
         }

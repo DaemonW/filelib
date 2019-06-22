@@ -1,6 +1,7 @@
 package com.daemonw.file.core.utils;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.model.LocalFile;
@@ -33,6 +34,8 @@ public class FileUtil {
         try {
             String name = srcFile.getName();
             Filer dstFile = new LocalFile(context, dstFolder.getPath() + "/" + name, dstFolder.getType());
+            Log.e("daemonw", "folder uri = " + dstFolder.getUri());
+            Log.e("daemonw", "file uri = " + dstFile.getUri());
             if (!dstFile.exists()) {
                 boolean success = dstFile.createNewFile();
                 if (!success) {

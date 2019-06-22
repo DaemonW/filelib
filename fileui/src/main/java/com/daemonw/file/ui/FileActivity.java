@@ -324,6 +324,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     }
 
     protected void refresh() {
+        mFileAdapter.setMultiSelect(false);
         updateCurrent();
     }
 }

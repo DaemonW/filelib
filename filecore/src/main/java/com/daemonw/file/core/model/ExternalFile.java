@@ -139,7 +139,7 @@ abstract class ExternalFile extends Filer {
 
     @Override
     public String getUri() {
-        if (canRawRead()) {
+        if (canRawWrite()) {
             return Uri.fromFile(mRawFile).toString();
         }
         DocFile f = getDocumentFile();

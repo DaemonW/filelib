@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="warn_grant_perm">点击存储空间进行授权</string>
+    <string name="tip_choose_file">长按文件激活选择模式</string>
+    <string name="warm_no_permission">您需要先获取访问权限</string>
+
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+    <string name="create_folder">创建文件夹</string>
+    <string name="create_file">创建文件</string>
+
+    <string name="action_mkdir">新建文件夹</string>
+    <string name="action_mkfile">新建文件</string>
+    <string name="action_delete">删除</string>
+    <string name="action_erase">擦除</string>
+    <string name="action_copy">复制</string>
+    <string name="action_cut">剪切</string>
+    <string name="action_paste">粘贴</string>
+</resources>

@@ -1,9 +1,18 @@
 <resources>
-    <string name="app_name">fileui</string>
-    <string name="warn_grant_perm">You need choose the volume to grant permission</string>
-    <string name="tip_choose_file">Long click item to enable select mode</string>
-    <string name="warm_no_permission">Sorry, you need to grant the permission first.</string>
+    <string name="warn_grant_perm">you need choose the volume to grant permission</string>
+    <string name="tip_choose_file">long click item to enable select mode</string>
+    <string name="warm_no_permission">you need to grant the permission first</string>
 
-    <string name="file_choose_confirm">ok</string>
-    <string name="file_choose_cancel">cancel</string>
+    <string name="confirm">ok</string>
+    <string name="cancel">cancel</string>
+    <string name="create_folder">Create Folder</string>
+    <string name="create_file">Create File</string>
+
+    <string name="action_mkdir">New Folder</string>
+    <string name="action_mkfile">New File</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_erase">Erase</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_cut">Cut</string>
+    <string name="action_paste">Paste</string>
 </resources>

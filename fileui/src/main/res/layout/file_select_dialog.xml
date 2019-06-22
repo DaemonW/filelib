@@ -41,7 +41,7 @@
             android:layout_alignParentStart="true"
             android:layout_marginStart="30dp"
             android:background="#00ffffff"
-            android:text="@string/file_choose_cancel" />
+            android:text="@string/cancel" />
 
         <Button
             android:id="@+id/confirm"
@@ -50,7 +50,7 @@
             android:layout_alignParentEnd="true"
             android:layout_marginStart="30dp"
             android:background="#00ffffff"
-            android:text="@string/file_choose_confirm" />
+            android:text="@string/confirm" />
     </RelativeLayout>
 
 </LinearLayout>

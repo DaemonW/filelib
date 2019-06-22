@@ -19,10 +19,10 @@ public class PermissionUtil {
     public static void requestPermission(Activity context, int mountType) {
         Volume volume = StorageUtil.getMountVolume(context, mountType);
         if (volume == null) {
-            Toast.makeText(context, R.string.tip_select_volume_err, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.err_volume_not_found, Toast.LENGTH_SHORT).show();
             return;
         }
-        String tip = context.getString(R.string.tip_select_volume, volume.mDescription);
+        String tip = context.getString(R.string.tip_grant_volume_perm, volume.mDescription);
         Toast.makeText(context, tip, Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
         int requestCode = mountType == Volume.MOUNT_EXTERNAL ? FileConst.REQUEST_GRANT_EXTERNAL_PERMISSION : FileConst.REQUEST_GRANT_USB_PERMISSION;

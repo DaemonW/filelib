@@ -84,8 +84,9 @@ public class FileManagerActivity extends FileActivity {
     private void showCreateDirDialog() {
         EditText text = new EditText(this);
         AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.create_folder)
                 .setView(text)
-                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String name = text.getText().toString();
@@ -99,7 +100,7 @@ public class FileManagerActivity extends FileActivity {
                         }
                     }
                 })
-                .setNegativeButton("cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .create();
         dialog.show();
     }
@@ -108,7 +109,8 @@ public class FileManagerActivity extends FileActivity {
         EditText text = new EditText(this);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(text)
-                .setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                .setTitle(R.string.create_file)
+                .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String name = text.getText().toString();
@@ -122,7 +124,7 @@ public class FileManagerActivity extends FileActivity {
                         }
                     }
                 })
-                .setNegativeButton("cancel", null)
+                .setNegativeButton(R.string.cancel, null)
                 .create();
         dialog.show();
     }

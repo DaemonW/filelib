@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.multidex.MultiDexApplication;
 
-import com.orhanobut.logger.AndroidLogAdapter;
 import com.orhanobut.logger.DiskLogAdapter;
 import com.orhanobut.logger.Logger;
 

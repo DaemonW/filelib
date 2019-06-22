@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="permission_granted">已授权.</string>
+    <string name="permission_denied">拒绝授权.</string>
+    <string name="tip_grant_volume_perm">选择 \'%1$s\' 获取访问权限.</string>
+    <string name="err_volume_not_found">存储空间不可用.</string>
+</resources>

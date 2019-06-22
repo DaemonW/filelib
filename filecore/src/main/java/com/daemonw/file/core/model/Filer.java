@@ -5,7 +5,6 @@ import com.daemonw.file.core.reflect.Volume;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public abstract class Filer {
     public static final int TYPE_INTERNAL = Volume.MOUNT_INTERNAL;

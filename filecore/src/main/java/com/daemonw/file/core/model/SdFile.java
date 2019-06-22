@@ -3,7 +3,6 @@ package com.daemonw.file.core.model;
 import android.content.Context;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 class SdFile extends ExternalFile {

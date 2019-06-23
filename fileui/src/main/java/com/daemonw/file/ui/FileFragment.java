@@ -3,49 +3,48 @@ package com.daemonw.file.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.FileProvider;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.PopupWindow;
+import android.widget.CheckBox;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.daemonw.file.FileConst;
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.reflect.Volume;
+import com.daemonw.file.core.utils.MimeTypes;
 import com.daemonw.file.core.utils.PermissionUtil;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.daemonw.file.ui.util.RxUtil;
-import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 
+import java.io.File;
 import java.util.List;
-import java.util.Set;
 
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
-
-public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnItemClickListener, View.OnKeyListener {
+public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnItemClickListener, View.OnKeyListener, FileLoader {
 
     protected Activity mContext;
     private RecyclerView mVolumeList;
     private RecyclerView mFileList;
+    private ProgressBar mProgress;
     private boolean isLoading = false;
     private boolean isVisible = false;
     protected boolean isShowVolume;
     private VolumeAdapter mVolumeAdapter;
-    private FileAdapterWrapper mFileAdapter;
+    private FileAdapter mFileAdapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -64,8 +63,9 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
         super.onViewCreated(view, savedInstanceState);
         mContext = getActivity();
         isShowVolume = true;
-        mVolumeList = (RecyclerView) view.findViewById(R.id.volume_list);
-        mFileList = (RecyclerView) view.findViewById(R.id.file_list);
+        mVolumeList = view.findViewById(R.id.volume_list);
+        mFileList = view.findViewById(R.id.file_list);
+        mProgress = view.findViewById(R.id.progress_loading);
         mFileList.setOnKeyListener(this);
         init();
     }
@@ -94,15 +94,23 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
 
     @Override
     public void onItemClick(View view, ViewHolder holder, int position) {
+        if(isLoading){
+            return;
+        }
         Filer file = mFileAdapter.getItem(position);
         if (file == null) {
+            return;
+        }
+        if (mFileAdapter.isMultiSelect()) {
+            CheckBox checkBox = holder.getView(R.id.file_check);
+            checkBox.setChecked(!checkBox.isChecked());
             return;
         }
         if (file.isDirectory()) {
             updateToChild(file);
         } else {
             if (!mFileAdapter.isMultiSelect()) {
-                Toast.makeText(mContext, R.string.tip_choose_file, Toast.LENGTH_SHORT).show();
+                onFileOpen(file);
             }
         }
         onFolderChanged();
@@ -111,18 +119,20 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
 
     @Override
     public boolean onItemLongClick(View view, ViewHolder holder, int position) {
+        if(isLoading){
+            return true;
+        }
         if (!mFileAdapter.isMultiSelect()) {
             mFileAdapter.setMultiSelect(true);
             mFileAdapter.notifyDataSetChanged();
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
 
     @Override
     public boolean onKey(View v, int keyCode, KeyEvent event) {
-        boolean handled = false;
         if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
             if (!isVisible) {
                 return false;
@@ -154,7 +164,7 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
                 return true;
             }
         }
-        return handled;
+        return false;
     }
 
 
@@ -195,7 +205,7 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
 
     private void init() {
         final List<Volume> volumes = StorageUtil.getVolumes(mContext);
-        mVolumeAdapter = new VolumeAdapter(mContext, R.layout.volume_item, volumes);
+        mVolumeAdapter = new VolumeAdapter(mContext, volumes);
         mVolumeAdapter.setOnItemClickListener(new MultiItemTypeAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, ViewHolder holder, int position) {
@@ -220,8 +230,8 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
         mVolumeList.setAdapter(mVolumeAdapter);
     }
 
-    private FileAdapterWrapper getFileAdapter(int mountType) {
-        FileAdapterWrapper adapter = null;
+    private FileAdapter getFileAdapter(int mountType) {
+        FileAdapter adapter = null;
         String rootPath = StorageUtil.getMountPath(mContext, mountType);
         if (rootPath == null) {
             return null;
@@ -230,15 +240,8 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
             PermissionUtil.requestPermission(mContext, mountType);
             return null;
         }
-        adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, true);
+        adapter = new FileAdapter(mContext, rootPath, mountType, null);
         adapter.setOnItemClickListener(this);
-        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
-            @Override
-            public void onHeaderClicked() {
-                updateToParent();
-                onFolderChanged();
-            }
-        });
         return adapter;
     }
 
@@ -250,98 +253,53 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
         mVolumeList.setVisibility(View.VISIBLE);
     }
 
-    public void updateToParent() {
-        if (isLoading) {
-            return;
+
+    protected void onFileOpen(Filer file) {
+        Intent intent = null;
+        Uri uri;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            String provider = getActivity().getApplication().getPackageName() + ".FileProvider";
+            String path = file.getPath();
+            try {
+                uri = FileProvider.getUriForFile(getActivity(), provider, new File(path));
+            } catch (Exception e) {
+                e.printStackTrace();
+                uri = Uri.parse(file.getUri());
+            }
+        } else {
+            uri = Uri.parse(file.getUri());
         }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(1)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object obj) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Integer, Boolean>() {
-                    @Override
-                    public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapter.updateToParent();
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+        intent = new Intent(Intent.ACTION_VIEW);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.setDataAndType(uri, MimeTypes.getMimeType(file.getName()));
+        if (isIntentAvailable(intent)) {
+            startActivity(intent);
+        } else {
+            Toast.makeText(getActivity(), R.string.unknow_file_type, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public boolean isIntentAvailable(Intent intent) {
+        final PackageManager packageManager = getActivity().getPackageManager();
+        List<ResolveInfo> list = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        if (list == null) {
+            return false;
+        }
+        return list.size() > 0;
+    }
+
+    public void updateToParent() {
+        mFileAdapter.loadParent();
     }
 
     public void updateToChild(Filer file) {
-        if (isLoading) {
-            return;
-        }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(file)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Filer, Boolean>() {
-                    @Override
-                    public Boolean apply(Filer localFile) throws Exception {
-                        mFileAdapter.updateToChild(localFile);
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+        mFileAdapter.load(file);
     }
 
 
     public void updateCurrent() {
-        if (isLoading) {
-            return;
-        }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(1)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Integer, Boolean>() {
-                    @Override
-                    public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapter.updateCurrent();
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+        mFileAdapter.reload();
     }
 
 
@@ -349,19 +307,27 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
 
     }
 
-    protected Set<Filer> getSelected() {
-        return mFileAdapter.getSelected();
+    @Override
+    public Filer[] load(Filer f) throws Exception {
+        return f.listFiles();
     }
 
-    protected Filer getCurrent() {
-        return mFileAdapter.getCurrent();
+    @Override
+    public void onLoad() {
+        isLoading = true;
+        mProgress.setVisibility(View.VISIBLE);
     }
 
-    protected void disableSelectMode() {
-        mFileAdapter.setMultiSelect(false);
+    @Override
+    public void onLoadFinish() {
+        isLoading = false;
+        mProgress.setVisibility(View.GONE);
     }
 
-    protected void refresh() {
-        updateCurrent();
+    @Override
+    public void onError(Throwable err) {
+        isLoading = false;
+        mProgress.setVisibility(View.GONE);
+        err.printStackTrace();
     }
 }

@@ -13,7 +13,6 @@ import android.widget.Toast;
 import com.daemonw.file.FileConst;
 import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.PermissionUtil;
-import com.daemonw.file.ui.R;
 
 public class GrantPermissionActivity extends AppCompatActivity {
 

@@ -14,13 +14,13 @@ import java.util.List;
 public class VolumeAdapter extends CommonAdapter<Volume> {
     private Context context;
 
-    public VolumeAdapter(Activity context, final int layoutResId, List<Volume> volumes) {
-        super(context, layoutResId, volumes);
+    public VolumeAdapter(Activity context, List<Volume> volumes) {
+        super(context, volumes);
         this.context = context;
         addItemViewDelegate(new ItemViewDelegate<Volume>() {
             @Override
             public int getItemViewLayoutId() {
-                return layoutResId;
+                return R.layout.volume_item;
             }
 
             @Override

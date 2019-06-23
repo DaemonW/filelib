@@ -15,7 +15,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.CheckBox;
-import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.daemonw.file.FileConst;
@@ -24,8 +24,6 @@ import com.daemonw.file.core.reflect.Volume;
 import com.daemonw.file.core.utils.MimeTypes;
 import com.daemonw.file.core.utils.PermissionUtil;
 import com.daemonw.file.core.utils.StorageUtil;
-import com.daemonw.file.ui.util.RxUtil;
-import com.daemonw.file.ui.util.UIUtil;
 import com.daemonw.widget.MultiItemTypeAdapter;
 import com.daemonw.widget.ViewHolder;
 
@@ -33,22 +31,17 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 
-import io.reactivex.Single;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
-
-public class FileActivity extends AppCompatActivity implements MultiItemTypeAdapter.OnItemClickListener {
+public class FileActivity extends AppCompatActivity implements MultiItemTypeAdapter.OnItemClickListener, FileLoader {
     private final static String LOG_TAG = FileActivity.class.getSimpleName();
 
     private Activity mContext;
     private RecyclerView mVolumeList;
     private RecyclerView mFileList;
-    private boolean isLoading = false;
+    private ProgressBar mProgress;
     private boolean isShowVolume;
+    private boolean isLoading;
     private VolumeAdapter mVolumeAdapter;
-    private FileAdapterWrapper mFileAdapter;
+    private FileAdapter mFileAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,14 +49,15 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         mContext = this;
         isShowVolume = true;
         setContentView(R.layout.file_activity);
-        mVolumeList = (RecyclerView) findViewById(R.id.volume_list);
-        mFileList = (RecyclerView) findViewById(R.id.file_list);
+        mVolumeList = findViewById(R.id.volume_list);
+        mFileList = findViewById(R.id.file_list);
+        mProgress = findViewById(R.id.progress_loading);
         init();
     }
 
     private void init() {
         final List<Volume> volumes = StorageUtil.getVolumes(mContext);
-        mVolumeAdapter = new VolumeAdapter(mContext, R.layout.volume_item, volumes);
+        mVolumeAdapter = new VolumeAdapter(mContext, volumes);
         mVolumeAdapter.setOnItemClickListener(new MultiItemTypeAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(View view, ViewHolder holder, int position) {
@@ -87,8 +81,8 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         mVolumeList.setAdapter(mVolumeAdapter);
     }
 
-    private FileAdapterWrapper getFileAdapter(int mountType) {
-        FileAdapterWrapper adapter = null;
+    private FileAdapter getFileAdapter(int mountType) {
+        FileAdapter adapter = null;
         String rootPath = StorageUtil.getMountPath(mContext, mountType);
         if (rootPath == null) {
             return null;
@@ -97,19 +91,22 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
             PermissionUtil.requestPermission(mContext, mountType);
             return null;
         }
-        adapter = new FileAdapterWrapper(mContext, R.layout.file_item, rootPath, mountType, true);
+        adapter = new FileAdapter(mContext, rootPath, mountType, this);
         adapter.setOnItemClickListener(this);
-        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
-            @Override
-            public void onHeaderClicked() {
-                updateToParent();
-            }
-        });
+//        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+//            @Override
+//            public void onHeaderClicked() {
+//                updateToParent();
+//            }
+//        });
         return adapter;
     }
 
     @Override
     public void onItemClick(View view, ViewHolder holder, int position) {
+        if(isLoading){
+            return;
+        }
         Filer file = mFileAdapter.getItem(position);
         if (file == null) {
             return;
@@ -130,6 +127,9 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
 
     @Override
     public boolean onItemLongClick(View view, ViewHolder holder, int position) {
+        if(isLoading){
+            return true;
+        }
         if (!mFileAdapter.isMultiSelect()) {
             mFileAdapter.setMultiSelect(true);
             mFileAdapter.notifyDataSetChanged();
@@ -141,24 +141,23 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     @Override
     public void onBackPressed() {
         if (mFileAdapter != null) {
-
+            if(isLoading){
+                return;
+            }
             if (mFileAdapter.isMultiSelect()) {
                 mFileAdapter.setMultiSelect(false);
                 mFileAdapter.notifyDataSetChanged();
                 return;
             }
-
             if (!mFileAdapter.isRoot()) {
                 updateToParent();
                 return;
             }
-
             if (isShowVolume) {
                 super.onBackPressed();
             } else {
                 showVolumeList();
             }
-
             return;
         }
         super.onBackPressed();
@@ -207,97 +206,16 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     }
 
     public void updateToParent() {
-        if (isLoading) {
-            return;
-        }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(1)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object obj) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Integer, Boolean>() {
-                    @Override
-                    public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapter.updateToParent();
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+        mFileAdapter.loadParent();
     }
 
     public void updateToChild(Filer file) {
-        if (isLoading) {
-            return;
-        }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(file)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Filer, Boolean>() {
-                    @Override
-                    public Boolean apply(Filer localFile) throws Exception {
-                        mFileAdapter.updateToChild(localFile);
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+        mFileAdapter.load(file);
     }
 
 
     public void updateCurrent() {
-        if (isLoading) {
-            return;
-        }
-        final PopupWindow loading = UIUtil.getPopupLoading(mContext);
-        RxUtil.add(Single.just(1)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe(new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) throws Exception {
-                        isLoading = true;
-                        UIUtil.showLoading(mContext, loading);
-                    }
-                }).observeOn(Schedulers.io())
-                .map(new Function<Integer, Boolean>() {
-                    @Override
-                    public Boolean apply(Integer integer) throws Exception {
-                        mFileAdapter.updateCurrent();
-                        return true;
-                    }
-                }).observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean o) throws Exception {
-                        mFileAdapter.notifyDataSetChanged();
-                        UIUtil.cancelLoading(loading);
-                        isLoading = false;
-                    }
-                }));
+        mFileAdapter.reload();
     }
 
 
@@ -322,10 +240,6 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         }
     }
 
-    interface OnFileChooseListener {
-        void onFileSelect(List<Filer> selected);
-    }
-
     protected void switchVolume(int mountPoint) {
         mFileAdapter = getFileAdapter(mountPoint);
         if (mFileAdapter != null) {
@@ -344,5 +258,29 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     protected void refresh() {
         mFileAdapter.setMultiSelect(false);
         updateCurrent();
+    }
+
+    @Override
+    public Filer[] load(Filer f) throws Exception {
+        return f.listFiles();
+    }
+
+    @Override
+    public void onLoad() {
+        isLoading = true;
+        mProgress.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void onLoadFinish() {
+        isLoading = false;
+        mProgress.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onError(Throwable err) {
+        isLoading = false;
+        mProgress.setVisibility(View.GONE);
+        err.printStackTrace();
     }
 }

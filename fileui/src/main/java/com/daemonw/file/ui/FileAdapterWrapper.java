@@ -27,9 +27,9 @@ class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
     private OnHeadClickListener mHeadClickListener;
 
 
-    public FileAdapterWrapper(Activity context, int layoutResId, String rootPath, int mountType, boolean showFile) {
+    public FileAdapterWrapper(Activity context, String rootPath, int mountType, FileLoader loader) {
         mContext = context;
-        mInnerAdapter = new FileAdapter(context, layoutResId, rootPath, mountType, showFile);
+        mInnerAdapter = new FileAdapter(context, rootPath, mountType, loader);
         addHeaderView(getHeaderView(context), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -140,22 +140,17 @@ class FileAdapterWrapper extends RecyclerView.Adapter<ViewHolder> {
         mInnerAdapter.setOnItemClickListener(listener);
     }
 
-    public void update(Filer[] fileList) {
-        mInnerAdapter.update(fileList);
-        notifyDataSetChanged();
+    public void loadParent() {
+        mInnerAdapter.loadParent();
     }
 
-    public void updateToParent() {
-        mInnerAdapter.updateToParent();
-    }
-
-    public void updateToChild(Filer file) {
-        mInnerAdapter.updateToChild(file);
+    public void load(Filer file) {
+        mInnerAdapter.load(file);
     }
 
 
-    public void updateCurrent() {
-        mInnerAdapter.updateCurrent();
+    public void reload() {
+        mInnerAdapter.reload();
     }
 
 

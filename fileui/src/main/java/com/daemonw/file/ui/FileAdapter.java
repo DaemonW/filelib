@@ -7,6 +7,7 @@ import android.widget.CompoundButton;
 
 import com.daemonw.file.core.model.Filer;
 import com.daemonw.file.core.model.LocalFile;
+import com.daemonw.file.ui.util.RxUtil;
 import com.daemonw.widget.CommonAdapter;
 import com.daemonw.widget.ItemViewDelegate;
 import com.daemonw.widget.ViewHolder;
@@ -14,36 +15,37 @@ import com.daemonw.widget.ViewHolder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+import io.reactivex.Single;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
+
 class FileAdapter extends CommonAdapter<Filer> {
-    private int fileDepth = 0;
+    private String mRootPath;
     private Filer mCurrent;
     private FileComparator mFileComparator = new FileComparator();
     private boolean mMultiSelect;
     private Set<Filer> mSelected = new HashSet<>();
-    private boolean showFile;
+    private FileLoader loader;
 
     private static SimpleDateFormat formater = new SimpleDateFormat("yyyyMMdd hh:mm:ss", Locale.getDefault());
 
-    public FileAdapter(Activity context, int layoutResId, String rootPath, int mountType) {
-        this(context,layoutResId,rootPath,mountType,true);
-    }
-
-    public FileAdapter(Activity context, final int layoutResId, String rootPath, int mountType, boolean showFile) {
-        super(context, layoutResId, new ArrayList<Filer>());
-        this.showFile = showFile;
+    FileAdapter(Activity context, String rootPath, int mountType, FileLoader loader) {
+        super(context, new ArrayList<Filer>());
         mCurrent = new LocalFile(context, rootPath, mountType);
-        Filer[] files = mCurrent.listFiles();
-        addFiles(sortFile(files));
+        mRootPath = mCurrent.getPath();
         addItemViewDelegate(new ItemViewDelegate<Filer>() {
             @Override
             public int getItemViewLayoutId() {
-                return layoutResId;
+                return R.layout.file_item;
             }
 
             @Override
@@ -53,16 +55,21 @@ class FileAdapter extends CommonAdapter<Filer> {
 
             @Override
             public void convert(ViewHolder holder, Filer filer, int position) {
-                FileAdapter.this.convert(holder,filer,position);
+                FileAdapter.this.convert(holder, filer, position);
             }
         });
+        this.loader = loader;
+        load(mCurrent, loader);
     }
 
-    public void setMultiSelect(boolean enable) {
+    void setMultiSelect(boolean enable) {
+        if (!enable) {
+            clearSelect();
+        }
         mMultiSelect = enable;
     }
 
-    public boolean isMultiSelect() {
+    boolean isMultiSelect() {
         return mMultiSelect;
     }
 
@@ -96,50 +103,35 @@ class FileAdapter extends CommonAdapter<Filer> {
         }
     }
 
-    public void update(Filer[] fileList) {
-        mDatas.clear();
-        mSelected.clear();
-        addFiles(sortFile(fileList));
-    }
-
-    public void updateToParent() {
+    void loadParent() {
         if (isRoot()) {
             return;
         }
         mCurrent = mCurrent.getParentFile();
-        mDatas.clear();
-        mSelected.clear();
-        addFiles(sortFile(mCurrent.listFiles()));
-        fileDepth--;
+        load(mCurrent, loader);
     }
 
-    public void updateToChild(Filer file) {
-        mCurrent = file;
-        mSelected.clear();
-        mDatas.clear();
-        addFiles(sortFile(mCurrent.listFiles()));
-        fileDepth++;
+    void load(Filer file) {
+        load(file, loader);
     }
 
-    public void updateCurrent() {
-        mDatas.clear();
-        mSelected.clear();
-        addFiles(sortFile(mCurrent.listFiles()));
+    void reload() {
+        load(mCurrent, loader);
     }
 
-    public boolean isRoot() {
-        return fileDepth <= 0;
+    boolean isRoot() {
+        return mCurrent.getPath().equals(mRootPath);
     }
 
-    public Filer getCurrent() {
+    Filer getCurrent() {
         return mCurrent;
     }
 
-    public Set<Filer> getSelected() {
+    Set<Filer> getSelected() {
         return mSelected;
     }
 
-    public void clearSelect() {
+    void clearSelect() {
         for (Filer f : mSelected) {
             f.setChecked(false);
         }
@@ -154,16 +146,58 @@ class FileAdapter extends CommonAdapter<Filer> {
         return fileList;
     }
 
-    protected void addFiles(Filer[] files) {
+    private void addFiles(Filer[] files) {
         if (files == null || files.length == 0) {
             return;
         }
-        for (Filer file : files) {
-            if (!showFile && !file.isDirectory()) {
-                continue;
-            }
-            mDatas.add(file);
-        }
+        Collections.addAll(mDatas, files);
+    }
+
+
+    private void load(final Filer f, final FileLoader fileLoader) {
+        RxUtil.add(Single.just(1)
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe(new Consumer<Object>() {
+                    @Override
+                    public void accept(Object o) throws Exception {
+                        if (fileLoader != null) {
+                            fileLoader.onLoad();
+                        }
+                    }
+                }).observeOn(Schedulers.io())
+                .map(new Function<Integer, Filer[]>() {
+                    @Override
+                    public Filer[] apply(Integer integer) throws Exception {
+                        if (fileLoader != null) {
+                            Filer[] files = fileLoader.load(f);
+                            if (files == null) {
+                                files = new Filer[0];
+                            }
+                            return files;
+                        }
+                        return null;
+                    }
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Filer[]>() {
+                    @Override
+                    public void accept(Filer[] files) throws Exception {
+                        mCurrent = f;
+                        mSelected.clear();
+                        mDatas.clear();
+                        addFiles(sortFile(files));
+                        notifyDataSetChanged();
+                        if (fileLoader != null) {
+                            fileLoader.onLoadFinish();
+                        }
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        if (fileLoader != null) {
+                            fileLoader.onError(throwable);
+                        }
+                    }
+                }));
     }
 
     class FileComparator implements Comparator<Filer> {

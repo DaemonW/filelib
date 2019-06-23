@@ -3,6 +3,8 @@ package com.daemonw.file.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -164,22 +166,38 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
 
     protected void onFileOpen(Filer file) {
         Intent intent = null;
-        try {
-            Uri uri;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                String provider = getApplication().getPackageName() + ".FileProvider";
-                uri = FileProvider.getUriForFile(this, provider, new File(file.getPath()));
-            } else {
+        Uri uri;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            String provider = getApplication().getPackageName() + ".FileProvider";
+            String path = file.getPath();
+            try {
+                uri = FileProvider.getUriForFile(this, provider, new File(path));
+            } catch (Exception e) {
+                e.printStackTrace();
                 uri = Uri.parse(file.getUri());
             }
-            intent = new Intent(Intent.ACTION_VIEW);
-            intent.addCategory(Intent.CATEGORY_DEFAULT);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.setDataAndType(uri, MimeTypes.getMimeType(file.getName()));
-            startActivity(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
+        } else {
+            uri = Uri.parse(file.getUri());
         }
+        intent = new Intent(Intent.ACTION_VIEW);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.setDataAndType(uri, MimeTypes.getMimeType(file.getName()));
+        if (isIntentAvailable(intent)) {
+            startActivity(intent);
+        } else {
+            Toast.makeText(this, R.string.unknow_file_type, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    public boolean isIntentAvailable(Intent intent) {
+        final PackageManager packageManager = getPackageManager();
+        List<ResolveInfo> list = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        if (list == null) {
+            return false;
+        }
+        return list.size() > 0;
     }
 
     public void showVolumeList() {

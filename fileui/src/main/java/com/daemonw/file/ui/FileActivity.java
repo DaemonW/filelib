@@ -41,7 +41,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     private boolean isShowVolume;
     private boolean isLoading;
     private VolumeAdapter mVolumeAdapter;
-    private FileAdapter mFileAdapter;
+    private FileAdapterWrapper mFileAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,8 +81,8 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
         mVolumeList.setAdapter(mVolumeAdapter);
     }
 
-    private FileAdapter getFileAdapter(int mountType) {
-        FileAdapter adapter = null;
+    private FileAdapterWrapper getFileAdapter(int mountType) {
+        FileAdapterWrapper adapter = null;
         String rootPath = StorageUtil.getMountPath(mContext, mountType);
         if (rootPath == null) {
             return null;
@@ -91,14 +91,14 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
             PermissionUtil.requestPermission(mContext, mountType);
             return null;
         }
-        adapter = new FileAdapter(mContext, rootPath, mountType, this);
+        adapter = new FileAdapterWrapper(mContext, rootPath, mountType, this);
         adapter.setOnItemClickListener(this);
-//        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
-//            @Override
-//            public void onHeaderClicked() {
-//                updateToParent();
-//            }
-//        });
+        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+            @Override
+            public void onHeaderClicked() {
+                updateToParent();
+            }
+        });
         return adapter;
     }
 
@@ -275,6 +275,7 @@ public class FileActivity extends AppCompatActivity implements MultiItemTypeAdap
     public void onLoadFinish() {
         isLoading = false;
         mProgress.setVisibility(View.GONE);
+        mFileAdapter.notifyDataSetChanged();
     }
 
     @Override

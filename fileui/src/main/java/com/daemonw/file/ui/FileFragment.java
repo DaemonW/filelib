@@ -44,7 +44,7 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
     private boolean isVisible = false;
     protected boolean isShowVolume;
     private VolumeAdapter mVolumeAdapter;
-    private FileAdapter mFileAdapter;
+    private FileAdapterWrapper mFileAdapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -230,8 +230,8 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
         mVolumeList.setAdapter(mVolumeAdapter);
     }
 
-    private FileAdapter getFileAdapter(int mountType) {
-        FileAdapter adapter = null;
+    private FileAdapterWrapper getFileAdapter(int mountType) {
+        FileAdapterWrapper adapter = null;
         String rootPath = StorageUtil.getMountPath(mContext, mountType);
         if (rootPath == null) {
             return null;
@@ -240,8 +240,14 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
             PermissionUtil.requestPermission(mContext, mountType);
             return null;
         }
-        adapter = new FileAdapter(mContext, rootPath, mountType, null);
+        adapter = new FileAdapterWrapper(mContext, rootPath, mountType, null);
         adapter.setOnItemClickListener(this);
+        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+            @Override
+            public void onHeaderClicked() {
+                updateToParent();
+            }
+        });
         return adapter;
     }
 
@@ -322,6 +328,7 @@ public class FileFragment extends Fragment implements MultiItemTypeAdapter.OnIte
     public void onLoadFinish() {
         isLoading = false;
         mProgress.setVisibility(View.GONE);
+        mFileAdapter.notifyDataSetChanged();
     }
 
     @Override

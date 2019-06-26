@@ -40,7 +40,7 @@ public class FileChooseDialog extends Dialog implements MultiItemTypeAdapter.OnI
     private OnFileChooseListener mOnFileSelectListener;
     private boolean isLoading = false;
     private VolumeAdapter mVolumeAdapter;
-    private FileAdapter mFileAdapter;
+    private FileAdapterWrapper mFileAdapter;
     private boolean showFile;
 
     public FileChooseDialog(Activity context) {
@@ -127,8 +127,8 @@ public class FileChooseDialog extends Dialog implements MultiItemTypeAdapter.OnI
         }
     }
 
-    private FileAdapter getFileAdapter(int mountType) {
-        FileAdapter adapter = null;
+    private FileAdapterWrapper getFileAdapter(int mountType) {
+        FileAdapterWrapper adapter = null;
         String rootPath = StorageUtil.getMountPath(mContext, mountType);
         if (rootPath == null) {
             return null;
@@ -141,8 +141,14 @@ public class FileChooseDialog extends Dialog implements MultiItemTypeAdapter.OnI
             mContext.startActivity(intent);
             return null;
         }
-        adapter = new FileAdapter(mContext, rootPath, mountType, this);
+        adapter = new FileAdapterWrapper(mContext, rootPath, mountType, this);
         adapter.setOnItemClickListener(this);
+        adapter.setOnHeadClickListener(new FileAdapterWrapper.OnHeadClickListener() {
+            @Override
+            public void onHeaderClicked() {
+                updateToParent();
+            }
+        });
         return adapter;
     }
 
@@ -226,6 +232,7 @@ public class FileChooseDialog extends Dialog implements MultiItemTypeAdapter.OnI
     public void onLoadFinish() {
         isLoading = false;
         mProgressBar.setVisibility(View.GONE);
+        mFileAdapter.notifyDataSetChanged();
     }
 
     @Override
